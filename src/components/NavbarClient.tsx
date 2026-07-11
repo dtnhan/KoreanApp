@@ -24,13 +24,26 @@ function LogoutButton({ className }: { className?: string }) {
   );
 }
 
-export function NavbarClient({ user }: { user: NavUser }) {
+export function NavbarClient({
+  user,
+  dueCount = 0,
+}: {
+  user: NavUser;
+  dueCount?: number;
+}) {
   const [open, setOpen] = useState(false);
 
   const navLinks = [
     ...links,
     ...(user?.role === "ADMIN" ? [{ href: "/admin", label: labels.nav.admin }] : []),
   ];
+
+  const badge =
+    user && dueCount > 0 ? (
+      <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+        {dueCount > 99 ? "99+" : dueCount}
+      </span>
+    ) : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -50,6 +63,7 @@ export function NavbarClient({ user }: { user: NavUser }) {
               className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-brand-50 hover:text-brand-700"
             >
               {l.label}
+              {l.href === "/on-tap" && badge}
             </Link>
           ))}
 
@@ -101,6 +115,7 @@ export function NavbarClient({ user }: { user: NavUser }) {
                 className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-brand-50"
               >
                 {l.label}
+                {l.href === "/on-tap" && badge}
               </Link>
             ))}
 

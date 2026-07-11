@@ -12,7 +12,10 @@ export async function toggleLessonComplete(lessonId: string): Promise<ToggleResu
 
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
-    include: { course: { select: { slug: true } } },
+    include: {
+      course: { select: { slug: true } },
+      vocabulary: { select: { id: true } },
+    },
   });
   if (!lesson) {
     throw new Error("Không tìm thấy bài học");
@@ -30,6 +33,17 @@ export async function toggleLessonComplete(lessonId: string): Promise<ToggleResu
   } else {
     await prisma.userLessonProgress.create({ data: key });
     completed = true;
+
+    // Hoàn thành bài → tự động thêm từ vựng vào bộ thẻ (idempotent)
+    if (lesson.vocabulary.length > 0) {
+      await prisma.flashcard.createMany({
+        data: lesson.vocabulary.map((v) => ({
+          userId: user.id,
+          vocabularyItemId: v.id,
+        })),
+        skipDuplicates: true,
+      });
+    }
   }
 
   revalidatePath(`/khoa-hoc/${lesson.course.slug}/${lesson.slug}`);
@@ -37,6 +51,7 @@ export async function toggleLessonComplete(lessonId: string): Promise<ToggleResu
   revalidatePath("/khoa-hoc");
   revalidatePath("/");
   revalidatePath("/tien-do");
+  revalidatePath("/on-tap");
 
   return { completed };
 }
