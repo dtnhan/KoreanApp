@@ -1,0 +1,204 @@
+// Prisma schema — Website học tiếng Hàn (Tiếng Hàn Tổng Hợp)
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum QuestionType {
+  MCQ_KR_VN
+  MCQ_VN_KR
+  FILL_BLANK
+}
+
+// ---------- Auth (NextAuth / @auth/prisma-adapter) ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  progress     UserLessonProgress[]
+  flashcards   Flashcard[]
+  quizAttempts QuizAttempt[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------- Nội dung khóa học ----------
+
+model Course {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  order       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lessons Lesson[]
+}
+
+model Lesson {
+  id       String @id @default(cuid())
+  courseId String
+  slug     String
+  title    String
+  order    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  vocabulary VocabularyItem[]
+  grammar   GrammarPoint[]
+  dialogues Dialogue[]
+  quizQuestions QuizQuestion[]
+  progress  UserLessonProgress[]
+  quizAttempts QuizAttempt[]
+
+  @@unique([courseId, slug])
+  @@unique([courseId, order])
+}
+
+model VocabularyItem {
+  id           String  @id @default(cuid())
+  lessonId     String
+  korean       String
+  romanization String?
+  vietnamese   String
+  exampleKr    String?
+  exampleVi    String?
+  order        Int
+
+  lesson     Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  flashcards Flashcard[]
+}
+
+model GrammarPoint {
+  id          String @id @default(cuid())
+  lessonId    String
+  pattern     String
+  explanation String @db.Text
+  examples    Json // [{ kr, vi }]
+  order       Int
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+model Dialogue {
+  id       String @id @default(cuid())
+  lessonId String
+  title    String
+  lines    Json // [{ speaker, kr, vi }]
+  order    Int
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+model UserLessonProgress {
+  userId      String
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+}
+
+model Flashcard {
+  id               String    @id @default(cuid())
+  userId           String
+  vocabularyItemId String
+  easeFactor       Float     @default(2.5)
+  intervalDays     Int       @default(0)
+  repetitions      Int       @default(0)
+  lapses           Int       @default(0)
+  dueDate          DateTime  @default(now())
+  lastReviewedAt   DateTime?
+  createdAt        DateTime  @default(now())
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularyItem VocabularyItem @relation(fields: [vocabularyItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vocabularyItemId])
+  @@index([userId, dueDate])
+}
+
+model QuizQuestion {
+  id          String       @id @default(cuid())
+  lessonId    String
+  type        QuestionType
+  prompt      String       @db.Text
+  options     Json // string[] cho MCQ, [] cho FILL_BLANK
+  answer      String
+  explanation String?      @db.Text
+  order       Int
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  userId    String
+  lessonId  String
+  score     Int
+  total     Int
+  answers   Json
+  createdAt DateTime @default(now())
+
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
