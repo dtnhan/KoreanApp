@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { getCoursesWithProgress } from "@/lib/progress";
 import { CourseCard } from "@/components/CourseCard";
 import { levelOfSlug, levelOrder, levelLabel, type CourseLevel } from "@/lib/courses";
 import { labels } from "@/lib/labels";
@@ -10,10 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function CoursesPage() {
-  const courses = await prisma.course.findMany({
-    orderBy: { order: "asc" },
-    include: { _count: { select: { lessons: true } } },
-  });
+  const session = await auth();
+  const courses = await getCoursesWithProgress(session?.user?.id);
 
   const grouped: Record<CourseLevel, typeof courses> = {
     soCap: [],
@@ -44,7 +43,8 @@ export default async function CoursesPage() {
                     slug={c.slug}
                     title={c.title}
                     description={c.description}
-                    lessonCount={c._count.lessons}
+                    lessonCount={c.lessonCount}
+                    progress={c.progress}
                   />
                 ))}
               </div>

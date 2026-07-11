@@ -51,36 +51,8 @@ export function LessonTabs({
 
   return (
     <div className="mt-6">
-      {/* Action buttons (placeholders — tính năng ra mắt sau) */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled
-          title={L.comingSoon}
-          className="cursor-not-allowed rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-400"
-        >
-          ✓ {L.markComplete}
-        </button>
-        <button
-          type="button"
-          disabled
-          title={L.comingSoon}
-          className="cursor-not-allowed rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-400"
-        >
-          + {L.addToDeck}
-        </button>
-        <button
-          type="button"
-          disabled
-          title={L.comingSoon}
-          className="cursor-not-allowed rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-400"
-        >
-          {L.takeQuiz}
-        </button>
-      </div>
-
       {/* Tabs */}
-      <div className="mt-6 flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-slate-200">
         {tabs.map((t) => (
           <button
             key={t.key}

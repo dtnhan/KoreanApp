@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { labels } from "@/lib/labels";
 import { LessonTabs, type GrammarExample, type DialogueLine } from "@/components/LessonTabs";
+import { LessonActions } from "@/components/LessonActions";
 
 type Props = { params: Promise<{ courseSlug: string; lessonSlug: string }> };
 
@@ -34,6 +36,16 @@ export default async function LessonPage({ params }: Props) {
   const data = await getLesson(courseSlug, lessonSlug);
   if (!data) notFound();
   const { course, lesson } = data;
+
+  const session = await auth();
+  const isAuthed = !!session?.user;
+  const initialCompleted =
+    isAuthed &&
+    !!(await prisma.userLessonProgress.findUnique({
+      where: {
+        userId_lessonId: { userId: session!.user.id, lessonId: lesson.id },
+      },
+    }));
 
   const vocab = lesson.vocabulary.map((v) => ({
     id: v.id,
@@ -72,6 +84,15 @@ export default async function LessonPage({ params }: Props) {
         </p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">{lesson.title}</h1>
       </header>
+
+      <div className="mt-6">
+        <LessonActions
+          lessonId={lesson.id}
+          lessonPath={`/khoa-hoc/${course.slug}/${lesson.slug}`}
+          isAuthed={isAuthed}
+          initialCompleted={initialCompleted}
+        />
+      </div>
 
       <LessonTabs vocab={vocab} grammar={grammar} dialogues={dialogues} />
     </div>

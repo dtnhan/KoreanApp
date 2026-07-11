@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { getCoursesWithProgress } from "@/lib/progress";
 import { CourseCard } from "@/components/CourseCard";
 import { labels } from "@/lib/labels";
 
 export default async function HomePage() {
-  const courses = await prisma.course.findMany({
-    orderBy: { order: "asc" },
-    include: { _count: { select: { lessons: true } } },
-  });
+  const session = await auth();
+  const courses = await getCoursesWithProgress(session?.user?.id);
 
   return (
     <>
@@ -77,7 +76,8 @@ export default async function HomePage() {
               slug={c.slug}
               title={c.title}
               description={c.description}
-              lessonCount={c._count.lessons}
+              lessonCount={c.lessonCount}
+              progress={c.progress}
             />
           ))}
         </div>

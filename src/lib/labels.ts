@@ -36,6 +36,31 @@ export const labels = {
     explanation: "Giải thích",
   },
 
+  auth: {
+    loginTitle: "Đăng nhập",
+    registerTitle: "Đăng ký tài khoản",
+    name: "Họ tên",
+    email: "Email",
+    password: "Mật khẩu",
+    confirmPassword: "Nhập lại mật khẩu",
+    loginButton: "Đăng nhập",
+    registerButton: "Đăng ký",
+    loginWithGoogle: "Đăng nhập bằng Google",
+    noAccount: "Chưa có tài khoản?",
+    hasAccount: "Đã có tài khoản?",
+    loginToTrack: "Đăng nhập để lưu tiến độ học tập của bạn",
+    greeting: (name: string) => `Xin chào, ${name}!`,
+  },
+
+  progress: {
+    completed: "Đã hoàn thành",
+    completedLessons: (x: number, y: number) => `${x}/${y} bài`,
+    percent: (p: number) => `${p}%`,
+    totalCompleted: (n: number) => `Đã hoàn thành ${n} bài học`,
+    dashboardTitle: "Tiến độ học tập",
+    loginPrompt: "Đăng nhập để đánh dấu hoàn thành",
+  },
+
   flashcard: {
     showAnswer: "Hiện đáp án",
     again: "Lại",
