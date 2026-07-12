@@ -1,5 +1,7 @@
 import { PrismaClient, QuestionType } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const prisma = new PrismaClient();
 
@@ -244,6 +246,22 @@ async function main() {
       },
     },
   });
+
+  // ---------- Gắn audio phát âm (nếu đã sinh file, xem scripts/sync-audio.mjs) ----------
+  const manifestPath = join(process.cwd(), "prisma", "audio-manifest.json");
+  if (existsSync(manifestPath)) {
+    const manifest: Record<string, string> = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const items = await prisma.vocabularyItem.findMany({ select: { id: true, korean: true } });
+    let audioCount = 0;
+    for (const v of items) {
+      const url = manifest[v.korean.trim()];
+      if (url) {
+        await prisma.vocabularyItem.update({ where: { id: v.id }, data: { audioUrl: url } });
+        audioCount++;
+      }
+    }
+    console.log(`Đã gắn audio cho ${audioCount} từ vựng.`);
+  }
 
   const courseCount = await prisma.course.count();
   const lessonCount = await prisma.lesson.count();
