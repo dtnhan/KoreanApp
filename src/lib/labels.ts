@@ -94,6 +94,38 @@ export const labels = {
     historyEmpty: "Bạn chưa làm bài kiểm tra nào.",
   },
 
+  admin: {
+    dashboard: "Bảng điều khiển",
+    areaTitle: "Khu vực quản trị",
+    courses: "Quản lý khóa học",
+    course: "Khóa học",
+    lessons: "Bài học",
+    vocab: "Từ vựng",
+    grammar: "Ngữ pháp",
+    dialogues: "Hội thoại",
+    questions: "Câu hỏi",
+    users: "Người dùng",
+    attempts: "Lượt làm bài",
+    add: "Thêm mới",
+    edit: "Sửa",
+    delete: "Xóa",
+    save: "Lưu",
+    saving: "Đang lưu...",
+    saved: "Đã lưu ✓",
+    cancel: "Hủy",
+    confirmDeleteCourse:
+      "Xóa khóa học sẽ xóa toàn bộ bài học, từ vựng, thẻ ghi nhớ liên quan. Bạn chắc chắn?",
+    confirmDeleteLesson:
+      "Xóa bài học sẽ xóa toàn bộ từ vựng, ngữ pháp, hội thoại, câu hỏi và thẻ liên quan. Bạn chắc chắn?",
+    confirmDeleteItem: "Bạn chắc chắn muốn xóa mục này?",
+    title: "Tiêu đề",
+    slug: "Slug (đường dẫn)",
+    description: "Mô tả",
+    order: "Thứ tự",
+    openEditor: "Soạn nội dung →",
+    backToAdmin: "← Quản trị",
+  },
+
   levels: {
     soCap: "Sơ cấp",
     trungCap: "Trung cấp",

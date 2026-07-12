@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hàn Ngữ — Website học tiếng Hàn
 
-## Getting Started
+Website học tiếng Hàn giao diện tiếng Việt theo giáo trình **Tiếng Hàn Tổng Hợp**:
 
-First, run the development server:
+- 6 khóa học (Sơ cấp 1 → Cao cấp 2), mỗi bài gồm **Từ vựng · Ngữ pháp · Hội thoại**
+- Đăng ký / đăng nhập (email + mật khẩu, tùy chọn Google OAuth)
+- Theo dõi tiến độ học từng khóa
+- **Flashcard SRS** (thuật toán SM-2, múi giờ Việt Nam) để ôn từ vựng
+- **Bài kiểm tra** trắc nghiệm + điền khuyết, chấm điểm phía server, lưu lịch sử
+- **Trang quản trị** (role ADMIN): CRUD khóa học, bài học, từ vựng, ngữ pháp, hội thoại, câu hỏi
+
+Công nghệ: Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · Tailwind CSS 4 · Prisma 6 · PostgreSQL · Auth.js (NextAuth v5) · Zod · Vitest.
+
+## Yêu cầu
+
+- Node.js 24+ và npm 11+
+- PostgreSQL (đã tạo sẵn một database trống, ví dụ `hanngu`)
+
+## Cài đặt
+
+```bash
+npm install
+```
+
+> **Lưu ý npm 11**: npm chặn install scripts mặc định. Nếu Prisma báo thiếu engine, chạy:
+> `npm approve-scripts @prisma/client @prisma/engines prisma esbuild sharp unrs-resolver`
+
+Tạo file cấu hình môi trường từ mẫu:
+
+```bash
+cp .env.example .env
+```
+
+Sửa `.env`:
+
+- `DATABASE_URL` — chuỗi kết nối PostgreSQL của bạn
+- `AUTH_SECRET` — sinh chuỗi ngẫu nhiên: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+- `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` — để trống nếu chưa dùng Google OAuth
+
+Khởi tạo database + dữ liệu mẫu:
+
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
+
+Chạy dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tài khoản mặc định (seed)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Vai trò | Email               | Mật khẩu   |
+| ------- | ------------------- | ---------- |
+| ADMIN   | `admin@example.com` | `admin123` |
 
-## Learn More
+Đăng nhập bằng tài khoản trên để vào **Quản trị** (`/admin`).
 
-To learn more about Next.js, take a look at the following resources:
+## Lệnh hữu ích
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev      # chạy development
+npm run build    # build production
+npm test         # unit test (thuật toán SRS)
+npm run lint     # eslint
+npx prisma studio  # xem/sửa dữ liệu trực quan
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Cấu trúc thư mục
 
-## Deploy on Vercel
+```
+prisma/
+  schema.prisma        # toàn bộ data model
+  seed.ts              # dữ liệu mẫu (6 khóa, 3 bài Sơ cấp 1, admin)
+src/
+  app/
+    (public)/          # trang chủ, khóa học, bài học, kiểm tra
+    (auth)/            # đăng nhập, đăng ký
+    (user)/            # ôn tập (flashcard), tiến độ — cần đăng nhập
+    admin/             # quản trị nội dung — cần role ADMIN
+    api/auth/          # NextAuth route handler
+  actions/             # server actions (auth, progress, flashcards, quiz, admin/*)
+  components/          # Navbar, LessonTabs, FlashcardReviewer, QuizRunner, admin/*
+  lib/
+    prisma.ts          # Prisma client singleton
+    auth.ts            # cấu hình NextAuth v5
+    srs.ts             # thuật toán SM-2 (có unit test)
+    labels.ts          # chuỗi UI tiếng Việt tập trung
+    validation/        # zod schemas
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Bật đăng nhập Google (tùy chọn)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Vào [console.cloud.google.com](https://console.cloud.google.com) → tạo project → **APIs & Services → Credentials**.
+2. **Create Credentials → OAuth client ID** (loại *Web application*).
+3. Thêm **Authorized redirect URI**: `http://localhost:3000/api/auth/callback/google`
+4. Điền `AUTH_GOOGLE_ID` và `AUTH_GOOGLE_SECRET` trong `.env` rồi khởi động lại server.
+
+Nút "Đăng nhập bằng Google" tự động xuất hiện khi hai biến trên được cấu hình.

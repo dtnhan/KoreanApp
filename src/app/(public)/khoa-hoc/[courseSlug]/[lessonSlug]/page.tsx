@@ -28,7 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { courseSlug, lessonSlug } = await params;
   const data = await getLesson(courseSlug, lessonSlug);
   if (!data) return { title: labels.common.notFound };
-  return { title: `${data.lesson.title} — ${data.course.title}` };
+  return {
+    title: `${labels.common.lesson} ${data.lesson.order}: ${data.lesson.title} | ${data.course.title}`,
+    description: `Học ${data.lesson.title} trong khóa ${data.course.title}: từ vựng, ngữ pháp và hội thoại tiếng Hàn kèm bản dịch tiếng Việt.`,
+  };
 }
 
 export default async function LessonPage({ params }: Props) {
