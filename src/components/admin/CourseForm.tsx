@@ -29,6 +29,8 @@ export function CourseForm({ course }: { course?: CourseData }) {
   useEffect(() => {
     if (state.success && !course) {
       formRef.current?.reset();
+      // Chủ đích: reset form sau khi tạo thành công
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSlugValue("");
       setSlugTouched(false);
     }

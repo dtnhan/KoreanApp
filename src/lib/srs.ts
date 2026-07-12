@@ -53,7 +53,8 @@ export function schedule(
   rating: Rating,
   now: Date = new Date(),
 ): SrsScheduleResult {
-  let { easeFactor, intervalDays, repetitions, lapses } = card;
+  let { easeFactor, intervalDays, repetitions } = card;
+  const { lapses } = card;
 
   if (rating === "AGAIN") {
     return {

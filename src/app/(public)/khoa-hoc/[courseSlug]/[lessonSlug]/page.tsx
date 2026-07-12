@@ -50,6 +50,8 @@ export default async function LessonPage({ params }: Props) {
       },
     }));
 
+  const lessonPath = `/khoa-hoc/${course.slug}/${lesson.slug}`;
+
   const vocab = lesson.vocabulary.map((v) => ({
     id: v.id,
     korean: v.korean,
@@ -57,6 +59,7 @@ export default async function LessonPage({ params }: Props) {
     vietnamese: v.vietnamese,
     exampleKr: v.exampleKr,
     exampleVi: v.exampleVi,
+    audioUrl: v.audioUrl,
   }));
 
   const grammar = lesson.grammar.map((g) => ({
@@ -91,13 +94,18 @@ export default async function LessonPage({ params }: Props) {
       <div className="mt-6">
         <LessonActions
           lessonId={lesson.id}
-          lessonPath={`/khoa-hoc/${course.slug}/${lesson.slug}`}
+          lessonPath={lessonPath}
           isAuthed={isAuthed}
           initialCompleted={initialCompleted}
         />
       </div>
 
-      <LessonTabs vocab={vocab} grammar={grammar} dialogues={dialogues} />
+      <LessonTabs
+        vocab={vocab}
+        grammar={grammar}
+        dialogues={dialogues}
+        lessonPath={lessonPath}
+      />
     </div>
   );
 }

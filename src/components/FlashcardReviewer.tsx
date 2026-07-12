@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { reviewCard } from "@/actions/flashcards";
 import type { Rating } from "@/lib/srs";
 import { labels } from "@/lib/labels";
+import { AudioButton } from "@/components/AudioButton";
 
 export type ReviewCardData = {
   id: string;
@@ -13,6 +14,7 @@ export type ReviewCardData = {
   vietnamese: string;
   exampleKr: string | null;
   exampleVi: string | null;
+  audioUrl: string | null;
 };
 
 const F = labels.flashcard;
@@ -104,14 +106,19 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
         {F.remaining(queue.length)}
       </p>
 
-      {/* Thẻ */}
-      <button
-        type="button"
+      {/* Thẻ (div role=button để chứa được AudioButton bên trong) */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setFlipped((f) => !f)}
-        className="mt-2 flex min-h-72 w-full flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm transition hover:border-brand-300"
+        // Space/Enter đã được xử lý bởi listener keydown toàn cục của phiên ôn
+        className="mt-2 flex min-h-72 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm transition hover:border-brand-300"
       >
-        <span className="font-korean text-4xl font-bold text-slate-900 md:text-5xl">
-          {current.korean}
+        <span className="flex items-center gap-3">
+          <span className="font-korean text-4xl font-bold text-slate-900 md:text-5xl">
+            {current.korean}
+          </span>
+          <AudioButton text={current.korean} audioUrl={current.audioUrl} size="md" />
         </span>
 
         {flipped ? (
@@ -126,7 +133,10 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
             </span>
             {current.exampleKr && (
               <span className="mt-3 block rounded-lg bg-slate-50 px-4 py-2 text-sm">
-                <span className="font-korean block text-slate-800">{current.exampleKr}</span>
+                <span className="flex items-center justify-center gap-1.5">
+                  <span className="font-korean text-slate-800">{current.exampleKr}</span>
+                  <AudioButton text={current.exampleKr} />
+                </span>
                 {current.exampleVi && (
                   <span className="block text-slate-500">{current.exampleVi}</span>
                 )}
@@ -138,7 +148,7 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
             {F.showAnswer} (Space)
           </span>
         )}
-      </button>
+      </div>
 
       {/* Nút đánh giá */}
       {flipped ? (

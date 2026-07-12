@@ -48,6 +48,7 @@ export async function saveVocab(
     vietnamese: formData.get("vietnamese"),
     exampleKr: formData.get("exampleKr") ?? "",
     exampleVi: formData.get("exampleVi") ?? "",
+    audioUrl: formData.get("audioUrl") ?? "",
     order: formData.get("order"),
   });
   if (!parsed.success) return { fieldErrors: zodFieldErrors(parsed.error) };
@@ -60,6 +61,7 @@ export async function saveVocab(
     vietnamese: d.vietnamese,
     exampleKr: emptyToNull(d.exampleKr),
     exampleVi: emptyToNull(d.exampleVi),
+    audioUrl: emptyToNull(d.audioUrl),
     order: d.order,
   };
 

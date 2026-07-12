@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
-import { labels } from "@/lib/labels";
 import { LessonForm } from "@/components/admin/LessonForm";
 import {
   LessonContentAdmin,
@@ -11,8 +10,6 @@ import {
   type DialogueItem,
   type QuestionItem,
 } from "@/components/admin/LessonContentAdmin";
-
-const A = labels.admin;
 
 type Props = { params: Promise<{ lessonId: string }> };
 

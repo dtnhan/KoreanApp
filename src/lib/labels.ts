@@ -34,6 +34,27 @@ export const labels = {
     example: "Ví dụ",
     pattern: "Cấu trúc",
     explanation: "Giải thích",
+    listening: "Luyện nghe",
+    playAudio: "Phát âm",
+    stopAudio: "Dừng phát",
+    audioUnavailable: "Trình duyệt không hỗ trợ giọng đọc tiếng Hàn",
+    flashcardPractice: "Flash card",
+    showKorean: "Hiện tiếng Hàn",
+    hideKorean: "Ẩn tiếng Hàn",
+    slowSpeed: "Tốc độ chậm",
+    playAll: "Phát toàn bộ",
+  },
+
+  listening: {
+    dialogueTitle: "Nghe hội thoại",
+    quizTitle: "Nghe và chọn nghĩa",
+    quizIntro: "Nghe từ tiếng Hàn và chọn nghĩa tiếng Việt đúng.",
+    start: "Bắt đầu",
+    replay: "Nghe lại",
+    needMoreVocab: "Bài học cần ít nhất 4 từ vựng để luyện nghe.",
+    noDialogues: "Bài học này chưa có hội thoại.",
+    question: (x: number, y: number) => `Câu ${x}/${y}`,
+    result: (x: number, y: number) => `Đúng ${x}/${y} câu`,
   },
 
   auth: {
@@ -75,6 +96,13 @@ export const labels = {
     remaining: (n: number) => `Còn ${n} thẻ`,
     sessionDone: "Hoàn thành phiên ôn tập!",
     reviewedCount: (n: number) => `Bạn đã ôn ${n} lượt thẻ`,
+    known: "Đã thuộc",
+    unknown: "Chưa thuộc",
+    retryWrong: (n: number) => `Ôn lại ${n} thẻ chưa thuộc`,
+    restart: "Học lại từ đầu",
+    practiceDone: "Bạn đã thuộc tất cả từ vựng của bài! 🎉",
+    practiceTitle: "Flash card",
+    flipHint: "Bấm để lật thẻ",
   },
 
   quiz: {
@@ -113,6 +141,7 @@ export const labels = {
     saving: "Đang lưu...",
     saved: "Đã lưu ✓",
     cancel: "Hủy",
+    audioUrl: "URL âm thanh (MP3, tùy chọn)",
     confirmDeleteCourse:
       "Xóa khóa học sẽ xóa toàn bộ bài học, từ vựng, thẻ ghi nhớ liên quan. Bạn chắc chắn?",
     confirmDeleteLesson:

@@ -1,7 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { labels } from "@/lib/labels";
+import { AudioButton } from "@/components/AudioButton";
+import { DialoguePlayer } from "@/components/DialoguePlayer";
+import { ListeningQuiz } from "@/components/ListeningQuiz";
 
 export type GrammarExample = { kr: string; vi: string };
 export type DialogueLine = { speaker: string; kr: string; vi: string };
@@ -13,6 +17,7 @@ export type VocabRow = {
   vietnamese: string;
   exampleKr: string | null;
   exampleVi: string | null;
+  audioUrl: string | null;
 };
 export type GrammarRow = {
   id: string;
@@ -26,7 +31,7 @@ export type DialogueBlock = {
   lines: DialogueLine[];
 };
 
-type Tab = "vocab" | "grammar" | "dialogue";
+type Tab = "vocab" | "grammar" | "dialogue" | "listening";
 
 const L = labels.lesson;
 
@@ -34,10 +39,12 @@ export function LessonTabs({
   vocab,
   grammar,
   dialogues,
+  lessonPath,
 }: {
   vocab: VocabRow[];
   grammar: GrammarRow[];
   dialogues: DialogueBlock[];
+  lessonPath: string;
 }) {
   const [tab, setTab] = useState<Tab>("vocab");
   const [showRoman, setShowRoman] = useState(true);
@@ -47,12 +54,13 @@ export function LessonTabs({
     { key: "vocab", label: L.vocabulary },
     { key: "grammar", label: L.grammar },
     { key: "dialogue", label: L.dialogue },
+    { key: "listening", label: L.listening },
   ];
 
   return (
     <div className="mt-6">
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex flex-wrap gap-1 border-b border-slate-200">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -70,10 +78,23 @@ export function LessonTabs({
       </div>
 
       <div className="mt-6">
-        {tab === "vocab" && <VocabTab vocab={vocab} showRoman={showRoman} setShowRoman={setShowRoman} />}
+        {tab === "vocab" && (
+          <VocabTab
+            vocab={vocab}
+            showRoman={showRoman}
+            setShowRoman={setShowRoman}
+            lessonPath={lessonPath}
+          />
+        )}
         {tab === "grammar" && <GrammarTab grammar={grammar} />}
         {tab === "dialogue" && (
           <DialogueTab dialogues={dialogues} showTrans={showTrans} setShowTrans={setShowTrans} />
+        )}
+        {tab === "listening" && (
+          <div className="space-y-8">
+            <DialoguePlayer dialogues={dialogues} />
+            <ListeningQuiz vocab={vocab} />
+          </div>
         )}
       </div>
     </div>
@@ -100,14 +121,22 @@ function VocabTab({
   vocab,
   showRoman,
   setShowRoman,
+  lessonPath,
 }: {
   vocab: VocabRow[];
   showRoman: boolean;
   setShowRoman: (v: boolean) => void;
+  lessonPath: string;
 }) {
   return (
     <div>
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex items-center justify-end gap-2">
+        <Link
+          href={`${lessonPath}/flashcard`}
+          className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
+        >
+          🃏 {L.flashcardPractice}
+        </Link>
         <Toggle
           on={showRoman}
           onClick={() => setShowRoman(!showRoman)}
@@ -130,7 +159,12 @@ function VocabTab({
               <tr key={v.id} className="border-b border-slate-100 last:border-0 align-top">
                 <td className="px-4 py-3 text-slate-400">{i + 1}</td>
                 <td className="px-4 py-3">
-                  <span className="font-korean text-lg font-semibold text-slate-900">{v.korean}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-korean text-lg font-semibold text-slate-900">
+                      {v.korean}
+                    </span>
+                    <AudioButton text={v.korean} audioUrl={v.audioUrl} />
+                  </span>
                 </td>
                 {showRoman && (
                   <td className="px-4 py-3 italic text-slate-500">{v.romanization ?? "—"}</td>
@@ -139,7 +173,10 @@ function VocabTab({
                 <td className="px-4 py-3">
                   {v.exampleKr ? (
                     <div className="space-y-0.5">
-                      <p className="font-korean text-slate-800">{v.exampleKr}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-korean text-slate-800">{v.exampleKr}</p>
+                        <AudioButton text={v.exampleKr} />
+                      </div>
                       {v.exampleVi && <p className="text-xs text-slate-500">{v.exampleVi}</p>}
                     </div>
                   ) : (
@@ -165,7 +202,10 @@ function GrammarTab({ grammar }: { grammar: GrammarRow[] }) {
           <ul className="mt-4 space-y-2">
             {g.examples.map((ex, i) => (
               <li key={i} className="rounded-lg bg-slate-50 px-4 py-2.5">
-                <p className="font-korean text-slate-900">{ex.kr}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-korean text-slate-900">{ex.kr}</p>
+                  <AudioButton text={ex.kr} />
+                </div>
                 <p className="text-sm text-slate-500">{ex.vi}</p>
               </li>
             ))}
@@ -205,7 +245,10 @@ function DialogueTab({
                     {line.speaker}
                   </span>
                   <div>
-                    <p className="font-korean text-slate-900">{line.kr}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-korean text-slate-900">{line.kr}</p>
+                      <AudioButton text={line.kr} />
+                    </div>
                     {showTrans && <p className="text-sm text-slate-500">{line.vi}</p>}
                   </div>
                 </li>

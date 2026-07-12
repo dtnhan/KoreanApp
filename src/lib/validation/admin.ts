@@ -34,6 +34,7 @@ export const vocabSchema = z.object({
   vietnamese: z.string().trim().min(1, "Nghĩa tiếng Việt không được để trống").max(240),
   exampleKr: z.string().trim().max(500).optional().or(z.literal("")),
   exampleVi: z.string().trim().max(500).optional().or(z.literal("")),
+  audioUrl: z.url("URL không hợp lệ").max(500).optional().or(z.literal("")),
   order: orderNum,
 });
 

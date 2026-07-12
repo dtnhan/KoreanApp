@@ -31,6 +31,7 @@ export type VocabItem = {
   vietnamese: string;
   exampleKr: string | null;
   exampleVi: string | null;
+  audioUrl: string | null;
   order: number;
 };
 export type GrammarItem = {
@@ -265,6 +266,7 @@ function VocabForm({
       <AdminField label={labels.lesson.meaning} name="vietnamese" defaultValue={item?.vietnamese} error={state.fieldErrors?.vietnamese} required />
       <AdminField label="Ví dụ (Hàn)" name="exampleKr" defaultValue={item?.exampleKr ?? ""} error={state.fieldErrors?.exampleKr} />
       <AdminField label="Ví dụ (Việt)" name="exampleVi" defaultValue={item?.exampleVi ?? ""} error={state.fieldErrors?.exampleVi} />
+      <AdminField label={A.audioUrl} name="audioUrl" defaultValue={item?.audioUrl ?? ""} error={state.fieldErrors?.audioUrl} placeholder="https://.../tu-vung.mp3" />
       <AdminField label={A.order} name="order" type="number" defaultValue={item?.order ?? nextOrder ?? 1} error={state.fieldErrors?.order} required />
 
       <div className="flex items-center gap-2 sm:col-span-3">

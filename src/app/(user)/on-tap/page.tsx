@@ -43,6 +43,7 @@ export default async function ReviewPage() {
     vietnamese: c.vocabularyItem.vietnamese,
     exampleKr: c.vocabularyItem.exampleKr,
     exampleVi: c.vocabularyItem.exampleVi,
+    audioUrl: c.vocabularyItem.audioUrl,
   }));
 
   return (
