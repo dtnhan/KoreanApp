@@ -5,12 +5,15 @@ const prisma = new PrismaClient();
 
 async function main() {
   // ---------- Admin user ----------
-  const passwordHash = await bcrypt.hash("admin123", 10);
+  // Production: đặt SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD trong env để không dùng mật khẩu mặc định.
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@example.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
   await prisma.user.upsert({
-    where: { email: "admin@example.com" },
+    where: { email: adminEmail },
     update: { passwordHash, role: "ADMIN", name: "Quản trị viên" },
     create: {
-      email: "admin@example.com",
+      email: adminEmail,
       name: "Quản trị viên",
       passwordHash,
       role: "ADMIN",

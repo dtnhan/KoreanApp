@@ -12,6 +12,7 @@ export const googleEnabled =
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  trustHost: true,
   pages: { signIn: "/dang-nhap" },
   providers: [
     Credentials({
@@ -40,7 +41,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
-    ...(googleEnabled ? [Google] : []),
+    ...(googleEnabled
+      ? [Google({ allowDangerousEmailAccountLinking: true })]
+      : []),
   ],
   callbacks: {
     jwt({ token, user }) {

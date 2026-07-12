@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled (-pooler trên Neon) — dùng khi chạy app
+  directUrl = env("DIRECT_URL") // kết nối trực tiếp — dùng cho prisma migrate
 }
 
 enum Role {
