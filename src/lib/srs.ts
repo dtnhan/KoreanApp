@@ -38,6 +38,13 @@ export function addDays(d: Date, days: number): Date {
   return new Date(d.getTime() + days * DAY_MS);
 }
 
+/** Ngày lịch theo giờ Việt Nam ở dạng "YYYY-MM-DD" (en-CA cho định dạng ISO). */
+export function vnDateString(d: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(d);
+}
+
 /**
  * Tính trạng thái tiếp theo của thẻ sau khi người dùng đánh giá.
  *

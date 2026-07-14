@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getCoursesWithProgress } from "@/lib/progress";
+import { getStudyActivity } from "@/lib/study-stats";
 import { CourseCard } from "@/components/CourseCard";
+import { StudyActivityCard } from "@/components/StudyActivityCard";
 import { labels } from "@/lib/labels";
 
 export default async function HomePage() {
   const session = await auth();
   const courses = await getCoursesWithProgress(session?.user?.id);
+  const activity = session?.user ? await getStudyActivity(session.user.id) : null;
 
   return (
     <>
@@ -88,6 +91,13 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Hoạt động học tập (chỉ khi đã đăng nhập) */}
+      {session?.user && activity && (
+        <section className="mx-auto max-w-6xl px-4 pt-16">
+          <StudyActivityCard user={session.user} stats={activity} />
+        </section>
+      )}
 
       {/* Danh sách khóa học */}
       <section className="mx-auto max-w-6xl px-4 py-16">

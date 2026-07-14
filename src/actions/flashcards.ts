@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth-helpers";
-import { schedule, type Rating } from "@/lib/srs";
+import { schedule, vnDateString, type Rating } from "@/lib/srs";
 
 export type AddToDeckResult = { added: number; total: number };
 
@@ -83,7 +83,16 @@ export async function reviewCard(
     },
   });
 
+  // Ghi nhật ký học theo ngày (giờ VN) để tính chuỗi (streak)
+  const day = vnDateString(new Date());
+  await prisma.dailyStudyLog.upsert({
+    where: { userId_day: { userId: user.id, day } },
+    create: { userId: user.id, day, count: 1 },
+    update: { count: { increment: 1 } },
+  });
+
   revalidatePath("/on-tap");
+  revalidatePath("/");
 
   return {
     cardId: updated.id,

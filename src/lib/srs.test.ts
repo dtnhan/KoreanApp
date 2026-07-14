@@ -4,6 +4,7 @@ import {
   startOfDayVN,
   endOfTodayVN,
   addDays,
+  vnDateString,
   MIN_EF,
   MAX_EF,
   MAX_INTERVAL_DAYS,
@@ -33,6 +34,22 @@ describe("startOfDayVN / endOfTodayVN", () => {
 
   it("endOfTodayVN là 23:59:59.999 giờ VN", () => {
     expect(endOfTodayVN(NOW).toISOString()).toBe("2026-07-11T16:59:59.999Z");
+  });
+});
+
+describe("vnDateString", () => {
+  it("trả về ngày lịch VN dạng YYYY-MM-DD", () => {
+    expect(vnDateString(NOW)).toBe("2026-07-11");
+  });
+
+  it("tối muộn UTC nhưng đã sang ngày mới ở VN", () => {
+    // 2026-07-11 23:30 UTC = 2026-07-12 06:30 VN
+    expect(vnDateString(new Date("2026-07-11T23:30:00.000Z"))).toBe("2026-07-12");
+  });
+
+  it("ngay trước nửa đêm VN vẫn là ngày cũ", () => {
+    // 2026-07-11 16:30 UTC = 2026-07-11 23:30 VN
+    expect(vnDateString(new Date("2026-07-11T16:30:00.000Z"))).toBe("2026-07-11");
   });
 });
 

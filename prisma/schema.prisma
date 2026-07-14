@@ -35,11 +35,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  progress     UserLessonProgress[]
-  flashcards   Flashcard[]
-  quizAttempts QuizAttempt[]
+  accounts       Account[]
+  sessions       Session[]
+  progress       UserLessonProgress[]
+  flashcards     Flashcard[]
+  quizAttempts   QuizAttempt[]
+  dailyStudyLogs DailyStudyLog[]
+}
+
+model DailyStudyLog {
+  userId String
+  day    String // "YYYY-MM-DD" theo giờ VN (tránh lỗi timezone khi lưu Date)
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
 }
 
 model Account {

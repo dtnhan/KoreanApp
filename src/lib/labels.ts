@@ -4,6 +4,17 @@ export const labels = {
   siteName: "Hàn Ngữ",
   siteTagline: "Học tiếng Hàn theo giáo trình Tiếng Hàn Tổng Hợp",
 
+  home: {
+    activityTitle: "Hoạt động học tập",
+    streak: "Chuỗi hiện tại",
+    streakUnit: (n: number) => `${n} ngày`,
+    due: "Từ đến hạn",
+    mastered: "Thuần thục",
+    forecast: "Dự báo ôn tập 7 ngày tới",
+    reviewBtn: "Lặp lại ngắt quãng",
+    createDeckBtn: "Tạo Bộ thẻ",
+  },
+
   nav: {
     home: "Trang chủ",
     courses: "Khóa học",
