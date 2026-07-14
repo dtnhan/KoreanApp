@@ -141,3 +141,57 @@ export function speakKorean(text: string, opts: SpeakOptions = {}): StopFn {
 
   return cancel;
 }
+
+export type PlayKoreanOptions = SpeakOptions & { audioUrl?: string | null };
+
+/**
+ * Phát một đoạn tiếng Hàn: ưu tiên file MP3 nếu có `audioUrl` (và không đổi tốc độ),
+ * lỗi file thì fallback sang TTS. Nếu có `rate` (đọc chậm) hoặc không có file → dùng TTS.
+ * Trả về hàm hủy; tích hợp registry "chỉ một nguồn phát".
+ */
+export function playKorean(text: string, opts: PlayKoreanOptions = {}): StopFn {
+  const { audioUrl, rate, onEnd, onError } = opts;
+
+  // Đọc chậm chỉ TTS làm được; không có file → TTS
+  if (!audioUrl || (rate && rate !== 1)) {
+    return speakKorean(text, { rate, onEnd, onError });
+  }
+
+  if (typeof Audio === "undefined") {
+    return speakKorean(text, { onEnd, onError });
+  }
+
+  let cancelled = false;
+  let fellBack = false;
+  const audio = new Audio(audioUrl);
+
+  const cancel: StopFn = () => {
+    if (cancelled) return;
+    cancelled = true;
+    releasePlayback(cancel);
+    audio.pause();
+  };
+
+  audio.onended = () => {
+    releasePlayback(cancel);
+    if (!cancelled) onEnd?.();
+  };
+  audio.onerror = () => {
+    releasePlayback(cancel);
+    if (cancelled || fellBack) return;
+    fellBack = true;
+    // File hỏng → fallback TTS (speakKorean tự claim registry)
+    speakKorean(text, { onEnd, onError });
+  };
+
+  claimPlayback(cancel);
+  void audio.play().catch(() => {
+    if (!cancelled && !fellBack) {
+      fellBack = true;
+      releasePlayback(cancel);
+      speakKorean(text, { onEnd, onError });
+    }
+  });
+
+  return cancel;
+}

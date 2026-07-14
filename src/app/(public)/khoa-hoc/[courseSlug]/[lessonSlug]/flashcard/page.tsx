@@ -85,6 +85,7 @@ export default async function LessonFlashcardPage({ params }: Props) {
       exampleKr: c.vocabularyItem?.exampleKr ?? c.customExampleKr ?? null,
       exampleVi: c.vocabularyItem?.exampleVi ?? c.customExampleVi ?? null,
       audioUrl: c.vocabularyItem?.audioUrl ?? null,
+      exampleAudioUrl: c.vocabularyItem?.exampleAudioUrl ?? null,
     }));
 
     return (
@@ -113,6 +114,7 @@ export default async function LessonFlashcardPage({ params }: Props) {
     exampleKr: v.exampleKr,
     exampleVi: v.exampleVi,
     audioUrl: v.audioUrl,
+    exampleAudioUrl: v.exampleAudioUrl,
   }));
 
   return (

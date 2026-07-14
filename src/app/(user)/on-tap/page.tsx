@@ -89,6 +89,7 @@ export default async function ReviewPage() {
     exampleKr: c.vocabularyItem?.exampleKr ?? c.customExampleKr ?? null,
     exampleVi: c.vocabularyItem?.exampleVi ?? c.customExampleVi ?? null,
     audioUrl: c.vocabularyItem?.audioUrl ?? null,
+    exampleAudioUrl: c.vocabularyItem?.exampleAudioUrl ?? null,
   }));
 
   return (

@@ -17,6 +17,7 @@ export type PracticeCard = {
   exampleKr: string | null;
   exampleVi: string | null;
   audioUrl: string | null;
+  exampleAudioUrl: string | null;
 };
 
 export function PracticeFlashcards({
@@ -175,7 +176,7 @@ export function PracticeFlashcards({
               <span className="mt-3 block rounded-lg bg-slate-50 px-4 py-2 text-sm">
                 <span className="flex items-center justify-center gap-1.5">
                   <span className="font-korean text-slate-800">{current.exampleKr}</span>
-                  <AudioButton text={current.exampleKr} />
+                  <AudioButton text={current.exampleKr} audioUrl={current.exampleAudioUrl} />
                 </span>
                 {current.exampleVi && (
                   <span className="block text-slate-500">{current.exampleVi}</span>

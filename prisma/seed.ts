@@ -251,16 +251,36 @@ async function main() {
   const manifestPath = join(process.cwd(), "prisma", "audio-manifest.json");
   if (existsSync(manifestPath)) {
     const manifest: Record<string, string> = JSON.parse(readFileSync(manifestPath, "utf8"));
-    const items = await prisma.vocabularyItem.findMany({ select: { id: true, korean: true } });
+    const urlFor = (t?: string | null) => {
+      const s = (t ?? "").trim();
+      return s ? manifest[s] ?? null : null;
+    };
+
+    const items = await prisma.vocabularyItem.findMany({
+      select: { id: true, korean: true, exampleKr: true },
+    });
     let audioCount = 0;
     for (const v of items) {
-      const url = manifest[v.korean.trim()];
-      if (url) {
-        await prisma.vocabularyItem.update({ where: { id: v.id }, data: { audioUrl: url } });
-        audioCount++;
-      }
+      await prisma.vocabularyItem.update({
+        where: { id: v.id },
+        data: {
+          audioUrl: urlFor(v.korean),
+          exampleAudioUrl: urlFor(v.exampleKr),
+        },
+      });
+      audioCount++;
     }
-    console.log(`Đã gắn audio cho ${audioCount} từ vựng.`);
+
+    const dialogues = await prisma.dialogue.findMany({ select: { id: true, lines: true } });
+    for (const d of dialogues) {
+      const lines = (Array.isArray(d.lines) ? d.lines : []).map((line) => {
+        const l = line as { kr?: string } & Record<string, unknown>;
+        return { ...l, audioUrl: urlFor(l.kr) };
+      });
+      await prisma.dialogue.update({ where: { id: d.id }, data: { lines } });
+    }
+
+    console.log(`Đã gắn audio cho ${audioCount} từ vựng và ${dialogues.length} hội thoại.`);
   }
 
   const courseCount = await prisma.course.count();

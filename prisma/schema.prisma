@@ -121,6 +121,7 @@ model VocabularyItem {
   exampleKr    String?
   exampleVi    String?
   audioUrl     String?
+  exampleAudioUrl String?
   order        Int
 
   lesson     Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)

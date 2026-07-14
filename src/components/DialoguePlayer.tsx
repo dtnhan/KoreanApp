@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { speakKorean } from "@/lib/speech";
+import { playKorean } from "@/lib/speech";
 import { useSpeechSupported } from "@/lib/useSpeechSupported";
 import { labels } from "@/lib/labels";
 import type { DialogueBlock } from "@/components/LessonTabs";
@@ -66,7 +66,8 @@ export function DialoguePlayer({ dialogues }: { dialogues: DialogueBlock[] }) {
       return;
     }
     setLineIdx(i);
-    cancelRef.current = speakKorean(lines[i].kr, {
+    cancelRef.current = playKorean(lines[i].kr, {
+      audioUrl: lines[i].audioUrl,
       rate: slowRef.current ? SLOW_RATE : 1,
       onEnd: () => {
         if (session !== sessionRef.current) return;
@@ -95,7 +96,8 @@ export function DialoguePlayer({ dialogues }: { dialogues: DialogueBlock[] }) {
     stopAll();
     const session = ++sessionRef.current;
     setLineIdx(i);
-    cancelRef.current = speakKorean(dialogue.lines[i].kr, {
+    cancelRef.current = playKorean(dialogue.lines[i].kr, {
+      audioUrl: dialogue.lines[i].audioUrl,
       rate: slowRef.current ? SLOW_RATE : 1,
       onEnd: () => {
         if (session !== sessionRef.current) return;

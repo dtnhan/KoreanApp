@@ -8,7 +8,7 @@ import { DialoguePlayer } from "@/components/DialoguePlayer";
 import { ListeningQuiz } from "@/components/ListeningQuiz";
 
 export type GrammarExample = { kr: string; vi: string };
-export type DialogueLine = { speaker: string; kr: string; vi: string };
+export type DialogueLine = { speaker: string; kr: string; vi: string; audioUrl?: string | null };
 
 export type VocabRow = {
   id: string;
@@ -18,6 +18,7 @@ export type VocabRow = {
   exampleKr: string | null;
   exampleVi: string | null;
   audioUrl: string | null;
+  exampleAudioUrl: string | null;
 };
 export type GrammarRow = {
   id: string;
@@ -175,7 +176,7 @@ function VocabTab({
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <p className="font-korean text-slate-800">{v.exampleKr}</p>
-                        <AudioButton text={v.exampleKr} />
+                        <AudioButton text={v.exampleKr} audioUrl={v.exampleAudioUrl} />
                       </div>
                       {v.exampleVi && <p className="text-xs text-slate-500">{v.exampleVi}</p>}
                     </div>
@@ -247,7 +248,7 @@ function DialogueTab({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <p className="font-korean text-slate-900">{line.kr}</p>
-                      <AudioButton text={line.kr} />
+                      <AudioButton text={line.kr} audioUrl={line.audioUrl} />
                     </div>
                     {showTrans && <p className="text-sm text-slate-500">{line.vi}</p>}
                   </div>

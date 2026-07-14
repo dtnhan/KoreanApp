@@ -60,6 +60,7 @@ export default async function LessonPage({ params }: Props) {
     exampleKr: v.exampleKr,
     exampleVi: v.exampleVi,
     audioUrl: v.audioUrl,
+    exampleAudioUrl: v.exampleAudioUrl,
   }));
 
   const grammar = lesson.grammar.map((g) => ({
