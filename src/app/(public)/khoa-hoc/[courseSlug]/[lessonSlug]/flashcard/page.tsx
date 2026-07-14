@@ -79,12 +79,12 @@ export default async function LessonFlashcardPage({ params }: Props) {
 
     const cards = flashcards.map((c) => ({
       id: c.id, // BẮT BUỘC là flashcard.id để reviewCard(cardId, rating) hoạt động
-      korean: c.vocabularyItem.korean,
-      romanization: c.vocabularyItem.romanization,
-      vietnamese: c.vocabularyItem.vietnamese,
-      exampleKr: c.vocabularyItem.exampleKr,
-      exampleVi: c.vocabularyItem.exampleVi,
-      audioUrl: c.vocabularyItem.audioUrl,
+      korean: c.vocabularyItem?.korean ?? c.customKorean ?? "",
+      romanization: c.vocabularyItem?.romanization ?? c.customRomanization ?? null,
+      vietnamese: c.vocabularyItem?.vietnamese ?? c.customVietnamese ?? "",
+      exampleKr: c.vocabularyItem?.exampleKr ?? c.customExampleKr ?? null,
+      exampleVi: c.vocabularyItem?.exampleVi ?? c.customExampleVi ?? null,
+      audioUrl: c.vocabularyItem?.audioUrl ?? null,
     }));
 
     return (

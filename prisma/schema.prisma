@@ -162,7 +162,7 @@ model UserLessonProgress {
 model Flashcard {
   id               String    @id @default(cuid())
   userId           String
-  vocabularyItemId String
+  vocabularyItemId String?
   easeFactor       Float     @default(2.5)
   intervalDays     Int       @default(0)
   repetitions      Int       @default(0)
@@ -171,8 +171,15 @@ model Flashcard {
   lastReviewedAt   DateTime?
   createdAt        DateTime  @default(now())
 
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vocabularyItem VocabularyItem @relation(fields: [vocabularyItemId], references: [id], onDelete: Cascade)
+  // Thẻ tự tạo (khi vocabularyItemId = null)
+  customKorean       String?
+  customRomanization String?
+  customVietnamese   String?
+  customExampleKr    String?
+  customExampleVi    String?
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularyItem VocabularyItem? @relation(fields: [vocabularyItemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, vocabularyItemId])
   @@index([userId, dueDate])

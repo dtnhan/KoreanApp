@@ -30,12 +30,20 @@ export default async function ReviewPage() {
           <h1 className="text-2xl font-bold text-slate-900">{F.noCardsTitle}</h1>
           <p className="mx-auto mt-4 max-w-lg text-slate-600">{F.noCardsIntro}</p>
           <p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">{F.noCardsHowTo}</p>
-          <Link
-            href="/khoa-hoc"
-            className="mt-6 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700"
-          >
-            {F.chooseLesson}
-          </Link>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/khoa-hoc"
+              className="inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700"
+            >
+              {F.chooseLesson}
+            </Link>
+            <Link
+              href="/the-cua-toi"
+              className="inline-block rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:border-brand-300"
+            >
+              {F.createYourOwn}
+            </Link>
+          </div>
         </div>
       );
     }
@@ -75,20 +83,30 @@ export default async function ReviewPage() {
 
   const cards = dueCards.map((c) => ({
     id: c.id,
-    korean: c.vocabularyItem.korean,
-    romanization: c.vocabularyItem.romanization,
-    vietnamese: c.vocabularyItem.vietnamese,
-    exampleKr: c.vocabularyItem.exampleKr,
-    exampleVi: c.vocabularyItem.exampleVi,
-    audioUrl: c.vocabularyItem.audioUrl,
+    korean: c.vocabularyItem?.korean ?? c.customKorean ?? "",
+    romanization: c.vocabularyItem?.romanization ?? c.customRomanization ?? null,
+    vietnamese: c.vocabularyItem?.vietnamese ?? c.customVietnamese ?? "",
+    exampleKr: c.vocabularyItem?.exampleKr ?? c.customExampleKr ?? null,
+    exampleVi: c.vocabularyItem?.exampleVi ?? c.customExampleVi ?? null,
+    audioUrl: c.vocabularyItem?.audioUrl ?? null,
   }));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">{F.srsTitle}</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        {labels.flashcard.dueToday(cards.length)}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{F.srsTitle}</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            {labels.flashcard.dueToday(cards.length)}
+          </p>
+        </div>
+        <Link
+          href="/the-cua-toi"
+          className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-700"
+        >
+          {F.createYourOwn}
+        </Link>
+      </div>
       <FlashcardReviewer initialCards={cards} />
     </div>
   );

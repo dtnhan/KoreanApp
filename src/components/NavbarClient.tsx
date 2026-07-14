@@ -35,6 +35,7 @@ export function NavbarClient({
 
   const navLinks = [
     ...links,
+    ...(user ? [{ href: "/the-cua-toi", label: labels.nav.myCards }] : []),
     ...(user?.role === "ADMIN" ? [{ href: "/admin", label: labels.nav.admin }] : []),
   ];
 

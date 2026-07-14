@@ -69,6 +69,7 @@ export default async function HomePage() {
               Mỗi thẻ từ vựng sẽ quay lại đúng lúc bạn sắp quên — không sớm quá,
               không muộn quá. Thuật toán SM-2 tự tính lịch ôn dựa trên mức độ bạn
               nhớ, giúp bạn nhớ lâu mà chỉ cần ôn vài phút mỗi ngày các thẻ đến hạn.
+              Bạn cũng có thể tự tạo thẻ của riêng mình để ôn cùng bộ thẻ.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
