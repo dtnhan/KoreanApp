@@ -101,8 +101,30 @@ export const labels = {
     retryWrong: (n: number) => `Ôn lại ${n} thẻ chưa thuộc`,
     restart: "Học lại từ đầu",
     practiceDone: "Bạn đã thuộc tất cả từ vựng của bài! 🎉",
-    practiceTitle: "Flash card",
+    practiceTitle: "Lật thẻ nhanh",
     flipHint: "Bấm để lật thẻ",
+
+    // Ôn ghi nhớ ngắt quãng (SRS)
+    srsTitle: "Ôn ghi nhớ",
+    srsLessonTitle: (lesson: string) => `Ôn ghi nhớ — ${lesson}`,
+    srsSavedNote: "Đánh giá của bạn được lưu vào lịch ôn ngắt quãng.",
+    srsSeeDue: "Xem tất cả thẻ đến hạn hôm nay",
+
+    // Chế độ lật thẻ nhanh (khách)
+    quickTitle: (lesson: string) => `Lật thẻ nhanh — ${lesson}`,
+    quickBanner:
+      "Chế độ Lật thẻ nhanh — không lưu lịch ôn tập. Đăng nhập để bật Ôn ghi nhớ ngắt quãng (thẻ sẽ quay lại đúng lúc bạn sắp quên).",
+    quickLogin: "Đăng nhập để bật Ôn ghi nhớ",
+
+    // Trạng thái rỗng của /on-tap
+    noCardsTitle: "Bắt đầu ôn ghi nhớ ngắt quãng",
+    noCardsIntro:
+      "Ôn ghi nhớ ngắt quãng (SRS) giúp bạn nhớ lâu: mỗi thẻ từ vựng sẽ quay lại đúng lúc bạn sắp quên. Thêm từ vựng của một bài vào bộ thẻ để bắt đầu.",
+    noCardsHowTo:
+      'Mở một bài học và bấm "Thêm từ vựng vào bộ thẻ", hoặc vào phần Flashcard của bài.',
+    chooseLesson: "Chọn bài để bắt đầu",
+    comeBackTomorrow: "Quay lại ngày mai để ôn tiếp nhé.",
+    nextDue: (when: string) => `Thẻ tiếp theo đến hạn: ${when}`,
   },
 
   quiz: {

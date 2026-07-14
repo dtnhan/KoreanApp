@@ -57,6 +57,37 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Giới thiệu Học ghi nhớ ngắt quãng (SRS) */}
+      <section className="mx-auto max-w-6xl px-4 pt-16">
+        <div className="overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-600 to-brand-800 p-8 text-white shadow-sm md:p-12">
+          <div className="max-w-2xl">
+            <span className="inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+              SRS · Thuật toán SM-2
+            </span>
+            <h2 className="mt-4 text-3xl font-bold">Học ghi nhớ ngắt quãng</h2>
+            <p className="mt-4 text-lg leading-relaxed text-brand-50">
+              Mỗi thẻ từ vựng sẽ quay lại đúng lúc bạn sắp quên — không sớm quá,
+              không muộn quá. Thuật toán SM-2 tự tính lịch ôn dựa trên mức độ bạn
+              nhớ, giúp bạn nhớ lâu mà chỉ cần ôn vài phút mỗi ngày các thẻ đến hạn.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/on-tap"
+                className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-brand-700 shadow-sm transition hover:bg-brand-50"
+              >
+                Ôn thẻ hôm nay
+              </Link>
+              <Link
+                href="/khoa-hoc"
+                className="rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Chọn bài để bắt đầu
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Danh sách khóa học */}
       <section className="mx-auto max-w-6xl px-4 py-16">
         <div className="flex items-end justify-between">

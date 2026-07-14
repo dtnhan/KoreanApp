@@ -18,14 +18,51 @@ export default async function ReviewPage() {
     include: { vocabularyItem: true },
   });
 
+  const F = labels.flashcard;
+
   if (dueCards.length === 0) {
+    const totalCards = await prisma.flashcard.count({ where: { userId: user.id } });
+
+    // Chưa có thẻ nào → hướng dẫn bắt đầu
+    if (totalCards === 0) {
+      return (
+        <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-slate-900">{F.noCardsTitle}</h1>
+          <p className="mx-auto mt-4 max-w-lg text-slate-600">{F.noCardsIntro}</p>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">{F.noCardsHowTo}</p>
+          <Link
+            href="/khoa-hoc"
+            className="mt-6 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700"
+          >
+            {F.chooseLesson}
+          </Link>
+        </div>
+      );
+    }
+
+    // Có thẻ nhưng không đến hạn hôm nay
+    const next = await prisma.flashcard.findFirst({
+      where: { userId: user.id, dueDate: { gt: endOfTodayVN() } },
+      orderBy: { dueDate: "asc" },
+      select: { dueDate: true },
+    });
+    const nextWhen = next
+      ? new Intl.DateTimeFormat("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(next.dueDate)
+      : null;
+
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
         <h1 className="text-2xl font-bold text-slate-900">{labels.nav.review}</h1>
-        <p className="mt-4 text-lg text-slate-600">{labels.flashcard.empty}</p>
-        <p className="mt-2 text-sm text-slate-500">
-          Thêm từ vựng từ trang bài học bằng nút “{labels.lesson.addToDeck}”.
-        </p>
+        <p className="mt-4 text-lg text-slate-600">{F.empty}</p>
+        <p className="mt-2 text-sm text-slate-500">{F.comeBackTomorrow}</p>
+        {nextWhen && (
+          <p className="mt-1 text-sm text-slate-400">{F.nextDue(nextWhen)}</p>
+        )}
         <Link
           href="/khoa-hoc"
           className="mt-6 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700"
@@ -48,7 +85,7 @@ export default async function ReviewPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">{labels.nav.review}</h1>
+      <h1 className="text-2xl font-bold text-slate-900">{F.srsTitle}</h1>
       <p className="mt-1 text-sm text-slate-600">
         {labels.flashcard.dueToday(cards.length)}
       </p>
