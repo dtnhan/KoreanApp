@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { shuffle } from "@/lib/listening";
 import { labels } from "@/lib/labels";
 import { PracticeFlashcards } from "@/components/PracticeFlashcards";
 import { FlashcardReviewer } from "@/components/FlashcardReviewer";
@@ -100,7 +101,7 @@ export default async function LessonFlashcardPage({ params }: Props) {
             {F.srsSeeDue}
           </Link>
         </p>
-        <FlashcardReviewer initialCards={cards} />
+        <FlashcardReviewer initialCards={shuffle(cards)} />
       </div>
     );
   }

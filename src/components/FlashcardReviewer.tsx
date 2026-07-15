@@ -30,12 +30,15 @@ const RATINGS: { rating: Rating; label: string; key: string; cls: string }[] = [
 type Counts = Record<Rating, number>;
 
 export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardData[] }) {
-  const [queue, setQueue] = useState<ReviewCardData[]>(initialCards);
+  // Mảng cố định + con trỏ index để hỗ trợ Trước/Sau.
+  // Thứ tự ngẫu nhiên do trang (server) trộn sẵn trước khi truyền vào.
+  const [cards, setCards] = useState<ReviewCardData[]>(initialCards);
+  const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [counts, setCounts] = useState<Counts>({ AGAIN: 0, HARD: 0, GOOD: 0, EASY: 0 });
   const [pending, startTransition] = useTransition();
 
-  const current = queue[0];
+  const current = cards[index];
   const reviewedTotal = counts.AGAIN + counts.HARD + counts.GOOD + counts.EASY;
 
   const rate = useCallback(
@@ -45,16 +48,26 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
       startTransition(async () => {
         await reviewCard(card.id, rating);
         setCounts((c) => ({ ...c, [rating]: c[rating] + 1 }));
-        setQueue((q) => {
-          const rest = q.slice(1);
-          // "Lại" → thẻ quay lại cuối hàng đợi trong phiên
-          return rating === "AGAIN" ? [...rest, card] : rest;
-        });
+        // "Lại" → thẻ quay lại cuối phiên để ôn lại
+        if (rating === "AGAIN") {
+          setCards((cs) => [...cs, card]);
+        }
+        setIndex((i) => i + 1); // tự sang thẻ kế
         setFlipped(false);
       });
     },
     [current, pending],
   );
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => (i > 0 ? i - 1 : i));
+    setFlipped(false);
+  }, []);
+
+  const goNext = useCallback(() => {
+    setIndex((i) => (i < cards.length - 1 ? i + 1 : i));
+    setFlipped(false);
+  }, [cards.length]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -62,6 +75,16 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
       if (e.code === "Space" || e.key === "Enter") {
         e.preventDefault();
         setFlipped((f) => !f);
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
         return;
       }
       if (flipped) {
@@ -74,7 +97,7 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, flipped, rate]);
+  }, [current, flipped, rate, goPrev, goNext]);
 
   // ---------- Tổng kết phiên ----------
   if (!current) {
@@ -101,10 +124,13 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
     );
   }
 
+  const isFirst = index === 0;
+  const isLast = index >= cards.length - 1;
+
   return (
     <div className="mt-6">
       <p className="text-right text-xs font-medium text-slate-500">
-        {F.remaining(queue.length)}
+        {F.remaining(cards.length - index)}
       </p>
 
       {/* Thẻ (div role=button để chứa được AudioButton bên trong) */}
@@ -151,7 +177,7 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
         )}
       </div>
 
-      {/* Nút đánh giá */}
+      {/* Nút đánh giá độ nhớ */}
       {flipped ? (
         <div className="mt-4 grid grid-cols-4 gap-2">
           {RATINGS.map((r) => (
@@ -176,6 +202,30 @@ export function FlashcardReviewer({ initialCards }: { initialCards: ReviewCardDa
           {F.showAnswer}
         </button>
       )}
+
+      {/* Mũi tên Trước/Sau — duyệt thẻ mà không đánh giá */}
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={isFirst}
+          aria-label={F.prev}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <span aria-hidden="true">←</span>
+          {F.prev}
+        </button>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={isLast}
+          aria-label={F.next}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {F.next}
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
     </div>
   );
 }

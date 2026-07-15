@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { endOfTodayVN } from "@/lib/srs";
+import { shuffle } from "@/lib/listening";
 import { labels } from "@/lib/labels";
 import { FlashcardReviewer } from "@/components/FlashcardReviewer";
 
@@ -108,7 +109,7 @@ export default async function ReviewPage() {
           {F.createYourOwn}
         </Link>
       </div>
-      <FlashcardReviewer initialCards={cards} />
+      <FlashcardReviewer initialCards={shuffle(cards)} />
     </div>
   );
 }

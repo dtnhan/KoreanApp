@@ -106,6 +106,8 @@ export const labels = {
     alreadyInDeck: "Từ vựng đã có trong bộ thẻ",
     autoAdded: "Đã thêm từ vựng vào bộ thẻ",
     remaining: (n: number) => `Còn ${n} thẻ`,
+    prev: "Trước",
+    next: "Sau",
     sessionDone: "Hoàn thành phiên ôn tập!",
     reviewedCount: (n: number) => `Bạn đã ôn ${n} lượt thẻ`,
     known: "Đã thuộc",
