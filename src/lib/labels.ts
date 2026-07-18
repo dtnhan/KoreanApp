@@ -201,6 +201,11 @@ export const labels = {
     saved: "Đã lưu ✓",
     cancel: "Hủy",
     audioUrl: "URL âm thanh (MP3, tùy chọn)",
+    autoGenerate: "Tự động tạo câu hỏi",
+    generating: "Đang tạo…",
+    generated: (n: number) => `Đã tạo ${n} câu hỏi`,
+    nothingToGenerate:
+      "Không có câu hỏi mới để tạo (nội dung chưa đủ hoặc đã đủ câu hỏi)",
     confirmDeleteCourse:
       "Xóa khóa học sẽ xóa toàn bộ bài học, từ vựng, thẻ ghi nhớ liên quan. Bạn chắc chắn?",
     confirmDeleteLesson:

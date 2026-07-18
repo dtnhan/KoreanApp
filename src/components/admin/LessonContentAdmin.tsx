@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import {
   saveVocab,
   deleteVocab,
@@ -10,6 +10,7 @@ import {
   deleteDialogue,
   saveQuestion,
   deleteQuestion,
+  generateQuestions,
 } from "@/actions/admin/content";
 import type { AdminFormState } from "@/lib/admin-form";
 import { labels } from "@/lib/labels";
@@ -548,6 +549,36 @@ const TYPE_LABELS: Record<QuestionItem["type"], string> = {
   FILL_BLANK: "Điền vào chỗ trống",
 };
 
+function GenerateQuestionsButton({ lessonId }: { lessonId: string }) {
+  const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await generateQuestions(lessonId);
+            setMessage(
+              res.created > 0 ? A.generated(res.created) : A.nothingToGenerate,
+            );
+          })
+        }
+        className="rounded-lg border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 disabled:opacity-60"
+      >
+        {pending ? A.generating : `⚡ ${A.autoGenerate}`}
+      </button>
+      {message && !pending && (
+        <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+          {message}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function QuestionAdmin({ lessonId, items }: { lessonId: string; items: QuestionItem[] }) {
   const [editing, setEditing] = useState<string | "new" | null>(null);
 
@@ -556,7 +587,10 @@ function QuestionAdmin({ lessonId, items }: { lessonId: string; items: QuestionI
       {editing === "new" ? (
         <QuestionForm lessonId={lessonId} nextOrder={items.length + 1} onDone={() => setEditing(null)} />
       ) : (
-        <AddButton onClick={() => setEditing("new")} label={A.questions} />
+        <div className="flex flex-wrap items-center gap-2">
+          <AddButton onClick={() => setEditing("new")} label={A.questions} />
+          <GenerateQuestionsButton lessonId={lessonId} />
+        </div>
       )}
 
       {items.map((q) =>

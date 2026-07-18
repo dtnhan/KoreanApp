@@ -14,6 +14,7 @@ import {
   parseJsonArray,
   type AdminFormState,
 } from "@/lib/admin-form";
+import { buildQuestions } from "@/lib/question-gen";
 
 async function revalidateLessonContent(lessonId: string) {
   const lesson = await prisma.lesson.findUnique({
@@ -241,4 +242,76 @@ export async function deleteQuestion(id: string): Promise<void> {
   if (!item) return;
   await prisma.quizQuestion.delete({ where: { id } });
   await revalidateLessonContent(item.lessonId);
+}
+
+/**
+ * Tự động sinh câu hỏi theo luật từ từ vựng + ngữ pháp của bài.
+ * Câu mới nối tiếp sau câu có sẵn; câu trùng prompt bị bỏ qua.
+ */
+export async function generateQuestions(
+  lessonId: string,
+): Promise<{ created: number }> {
+  await requireAdmin();
+
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: {
+      vocabulary: {
+        select: { korean: true, vietnamese: true, exampleKr: true, exampleVi: true },
+      },
+      grammar: { select: { pattern: true, examples: true } },
+      quizQuestions: { select: { prompt: true } },
+    },
+  });
+  if (!lesson) throw new Error("Không tìm thấy bài học");
+
+  const candidates = buildQuestions({
+    vocab: lesson.vocabulary,
+    grammar: lesson.grammar.map((g) => ({
+      pattern: g.pattern,
+      examples: (g.examples as unknown as { kr: string; vi: string }[]) ?? [],
+    })),
+    existingPrompts: lesson.quizQuestions.map((q) => q.prompt),
+  });
+
+  const existingCount = lesson.quizQuestions.length;
+  const valid: {
+    lessonId: string;
+    type: "MCQ_KR_VN" | "MCQ_VN_KR" | "FILL_BLANK";
+    prompt: string;
+    options: string[];
+    answer: string;
+    explanation: string | null;
+    order: number;
+  }[] = [];
+
+  for (const c of candidates) {
+    const parsed = questionSchema.safeParse({
+      lessonId,
+      type: c.type,
+      prompt: c.prompt,
+      options: c.options,
+      answer: c.answer,
+      explanation: c.explanation ?? "",
+      order: existingCount + valid.length + 1,
+    });
+    if (!parsed.success) continue; // câu không hợp lệ → âm thầm bỏ, không throw
+    const d = parsed.data;
+    valid.push({
+      lessonId: d.lessonId,
+      type: d.type,
+      prompt: d.prompt,
+      options: d.options,
+      answer: d.answer,
+      explanation: emptyToNull(d.explanation),
+      order: d.order,
+    });
+  }
+
+  if (valid.length > 0) {
+    await prisma.quizQuestion.createMany({ data: valid });
+    await revalidateLessonContent(lessonId);
+  }
+
+  return { created: valid.length };
 }
