@@ -15,6 +15,7 @@ import {
   type AdminFormState,
 } from "@/lib/admin-form";
 import { buildQuestions } from "@/lib/question-gen";
+import { buildDialogue } from "@/lib/dialogue-gen";
 
 async function revalidateLessonContent(lessonId: string) {
   const lesson = await prisma.lesson.findUnique({
@@ -265,12 +266,28 @@ export async function generateQuestions(
   });
   if (!lesson) throw new Error("Không tìm thấy bài học");
 
+  // Bài trước trong cùng khóa → pool ôn tập lũy tiến
+  const priorLessons = await prisma.lesson.findMany({
+    where: { courseId: lesson.courseId, order: { lt: lesson.order } },
+    include: {
+      vocabulary: {
+        select: { korean: true, vietnamese: true, exampleKr: true, exampleVi: true },
+      },
+      grammar: { select: { pattern: true, examples: true } },
+    },
+  });
+
+  const castGrammar = (gs: { pattern: string; examples: unknown }[]) =>
+    gs.map((g) => ({
+      pattern: g.pattern,
+      examples: (g.examples as { kr: string; vi: string }[]) ?? [],
+    }));
+
   const candidates = buildQuestions({
     vocab: lesson.vocabulary,
-    grammar: lesson.grammar.map((g) => ({
-      pattern: g.pattern,
-      examples: (g.examples as unknown as { kr: string; vi: string }[]) ?? [],
-    })),
+    grammar: castGrammar(lesson.grammar),
+    reviewVocab: priorLessons.flatMap((l) => l.vocabulary),
+    reviewGrammar: castGrammar(priorLessons.flatMap((l) => l.grammar)),
     existingPrompts: lesson.quizQuestions.map((q) => q.prompt),
   });
 
@@ -314,4 +331,56 @@ export async function generateQuestions(
   }
 
   return { created: valid.length };
+}
+
+/**
+ * Sinh một hội thoại theo khuôn mẫu an toàn từ danh từ của bài
+ * (thiếu thì lấy thêm từ các bài trước). Không bao giờ sai trợ từ.
+ */
+export async function generateDialogue(
+  lessonId: string,
+): Promise<{ created: number }> {
+  await requireAdmin();
+
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: {
+      vocabulary: { select: { korean: true, vietnamese: true } },
+      dialogues: { select: { title: true } },
+    },
+  });
+  if (!lesson) throw new Error("Không tìm thấy bài học");
+
+  const priorLessons = await prisma.lesson.findMany({
+    where: { courseId: lesson.courseId, order: { lt: lesson.order } },
+    include: { vocabulary: { select: { korean: true, vietnamese: true } } },
+  });
+
+  const dialogue = buildDialogue({
+    vocab: lesson.vocabulary,
+    reviewVocab: priorLessons.flatMap((l) => l.vocabulary),
+    existingTitles: lesson.dialogues.map((d) => d.title),
+  });
+  if (!dialogue) return { created: 0 };
+
+  // Validate qua dialogueSchema sẵn có (title + lines {speaker,kr,vi} + order)
+  const parsed = dialogueSchema.safeParse({
+    lessonId,
+    title: dialogue.title,
+    lines: dialogue.lines,
+    order: lesson.dialogues.length + 1,
+  });
+  if (!parsed.success) return { created: 0 };
+
+  await prisma.dialogue.create({
+    data: {
+      lessonId,
+      title: parsed.data.title,
+      lines: parsed.data.lines,
+      order: parsed.data.order,
+    },
+  });
+  await revalidateLessonContent(lessonId);
+
+  return { created: 1 };
 }

@@ -4,6 +4,8 @@ import {
   parsePatternVariants,
   MAX_PER_TYPE,
   MAX_PER_GRAMMAR,
+  MAX_REVIEW_PER_TYPE,
+  REVIEW_SUFFIX,
   type QuestionGenVocab,
 } from "./question-gen";
 
@@ -204,5 +206,100 @@ describe("buildQuestions — dedupe", () => {
       seededRng(),
     );
     expect(new Set(qs.map((q) => q.prompt.trim())).size).toBe(qs.length);
+  });
+});
+
+describe("buildQuestions — ôn tập lũy tiến (review pools)", () => {
+  function makeReviewVocab(n: number): QuestionGenVocab[] {
+    return Array.from({ length: n }, (_, i) => ({
+      korean: `복습${i}`,
+      vietnamese: `ôn tập ${i}`,
+      exampleKr: `이것은 복습${i} 입니다.`,
+      exampleVi: `Đây là ôn tập ${i}.`,
+    }));
+  }
+
+  it("sinh câu ôn tập có hậu tố, cap 2/dạng từ vựng + 2 câu ngữ pháp", () => {
+    const qs = buildQuestions(
+      {
+        vocab: makeVocab(8),
+        grammar: [],
+        reviewVocab: makeReviewVocab(6),
+        reviewGrammar: [
+          {
+            pattern: "N + 은/는 (trợ từ chủ đề)",
+            examples: [
+              { kr: "저는 학생이에요.", vi: "a" },
+              { kr: "이름은 민수예요.", vi: "b" },
+              { kr: "친구는 와요.", vi: "c" },
+            ],
+          },
+        ],
+        existingPrompts: [],
+      },
+      seededRng(),
+    );
+    const review = qs.filter((q) => q.explanation?.includes(REVIEW_SUFFIX));
+    expect(review.length).toBeGreaterThan(0);
+    const byType = (t: string) => review.filter((q) => q.type === t);
+    expect(byType("MCQ_KR_VN").length).toBeLessThanOrEqual(MAX_REVIEW_PER_TYPE);
+    expect(byType("MCQ_VN_KR").length).toBeLessThanOrEqual(MAX_REVIEW_PER_TYPE);
+    // FILL_BLANK ôn tập = tối đa 2 (từ vựng) + 2 (ngữ pháp)
+    expect(byType("FILL_BLANK").length).toBeLessThanOrEqual(MAX_REVIEW_PER_TYPE * 2);
+    // Câu ngữ pháp ôn tập giữ "Cấu trúc: ..." và nối hậu tố
+    const grammarReview = review.find((q) => q.explanation?.startsWith("Cấu trúc"));
+    expect(grammarReview?.explanation).toContain(REVIEW_SUFFIX);
+    // Câu ôn tập từ vựng dùng hậu tố đứng riêng
+    const vocabReview = review.find((q) => q.type === "MCQ_KR_VN");
+    expect(vocabReview?.explanation).toBe(REVIEW_SUFFIX);
+  });
+
+  it("câu bài hiện tại vẫn chiếm đa số", () => {
+    const qs = buildQuestions(
+      {
+        vocab: makeVocab(8),
+        grammar: SEED_GRAMMAR,
+        reviewVocab: makeReviewVocab(8),
+        reviewGrammar: SEED_GRAMMAR.map((g) => ({ ...g, pattern: "N + 이/가 (trợ từ chủ ngữ)", examples: [{ kr: "친구가 와요.", vi: "x" }] })),
+        existingPrompts: [],
+      },
+      seededRng(),
+    );
+    const review = qs.filter((q) => q.explanation?.includes(REVIEW_SUFFIX));
+    const current = qs.length - review.length;
+    expect(current).toBeGreaterThan(review.length);
+  });
+
+  it("không có bài trước → không có câu ôn tập, hành vi như cũ", () => {
+    const a = buildQuestions(
+      { vocab: makeVocab(8), grammar: SEED_GRAMMAR, existingPrompts: [] },
+      seededRng(),
+    );
+    const b = buildQuestions(
+      { vocab: makeVocab(8), grammar: SEED_GRAMMAR, reviewVocab: [], reviewGrammar: [], existingPrompts: [] },
+      seededRng(),
+    );
+    expect(a).toEqual(b);
+    expect(a.some((q) => q.explanation?.includes(REVIEW_SUFFIX))).toBe(false);
+  });
+
+  it("nhiễu MCQ lấy được từ pool gộp (bài hiện tại <4 nghĩa vẫn sinh MCQ)", () => {
+    const qs = buildQuestions(
+      {
+        vocab: makeVocab(2), // chỉ 2 nghĩa distinct
+        grammar: [],
+        reviewVocab: makeReviewVocab(4), // pool gộp = 6 → đủ
+        existingPrompts: [],
+      },
+      seededRng(),
+    );
+    const mcq = qs.filter((q) => q.type === "MCQ_KR_VN" && !q.explanation);
+    expect(mcq.length).toBe(2); // cả 2 từ bài hiện tại đều có MCQ
+    for (const q of mcq) {
+      expect(q.options).toHaveLength(4);
+      expect(q.options).toContain(q.answer);
+      // ít nhất một nhiễu phải đến từ pool ôn tập
+      expect(q.options.some((o) => o.startsWith("ôn tập"))).toBe(true);
+    }
   });
 });

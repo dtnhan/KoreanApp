@@ -26,15 +26,23 @@ export type QuestionGenGrammar = {
 export type QuestionGenInput = {
   vocab: QuestionGenVocab[];
   grammar: QuestionGenGrammar[];
+  /** Từ vựng các bài trước (ôn tập lũy tiến) — mặc định []. */
+  reviewVocab?: QuestionGenVocab[];
+  /** Ngữ pháp các bài trước — mặc định []. */
+  reviewGrammar?: QuestionGenGrammar[];
   existingPrompts: string[];
 };
 
 type Rng = () => number;
 
-/** Tối đa mỗi dạng câu hỏi trong một lần sinh. */
+/** Tối đa mỗi dạng câu hỏi trong một lần sinh (bài hiện tại). */
 export const MAX_PER_TYPE = 5;
-/** Tối đa số câu cho mỗi điểm ngữ pháp. */
+/** Tối đa số câu cho mỗi điểm ngữ pháp (bài hiện tại). */
 export const MAX_PER_GRAMMAR = 2;
+/** Tối đa câu ÔN TẬP mỗi dạng lấy từ bài trước. */
+export const MAX_REVIEW_PER_TYPE = 2;
+/** Hậu tố explanation cho câu ôn tập. */
+export const REVIEW_SUFFIX = "(Ôn tập bài trước)";
 /** Cần tối thiểu bấy nhiêu nghĩa/từ distinct để có 3 đáp án nhiễu. */
 const MIN_DISTINCT_FOR_MCQ = 4;
 
@@ -58,6 +66,9 @@ export function buildQuestions(
   rng: Rng = Math.random,
 ): GeneratedQuestion[] {
   const { vocab, grammar, existingPrompts } = input;
+  const reviewVocab = input.reviewVocab ?? [];
+  const reviewGrammar = input.reviewGrammar ?? [];
+
   const existing = new Set(existingPrompts.map((p) => p.trim()));
   const seenPrompts = new Set<string>(existing);
   const out: GeneratedQuestion[] = [];
@@ -85,17 +96,20 @@ export function buildQuestions(
     return [...fresh, ...used];
   }
 
-  const distinctMeanings = [...new Set(vocab.map((v) => v.vietnamese))];
-  const distinctKorean = [...new Set(vocab.map((v) => v.korean))];
+  // Pool nhiễu MCQ = bài hiện tại + các bài trước (điều kiện ≥4 tính trên pool gộp)
+  const combined = [...vocab, ...reviewVocab];
+  const distinctMeanings = [...new Set(combined.map((v) => v.vietnamese))];
+  const distinctKorean = [...new Set(combined.map((v) => v.korean))];
   const canMcq =
     distinctMeanings.length >= MIN_DISTINCT_FOR_MCQ &&
     distinctKorean.length >= MIN_DISTINCT_FOR_MCQ;
 
-  // ---------- MCQ Hàn → Việt ----------
-  if (canMcq) {
+  /** MCQ Hàn → Việt cho một danh sách từ, với cap riêng. */
+  function genMcqKrVn(list: QuestionGenVocab[], cap: number, isReview: boolean) {
+    if (!canMcq) return;
     let count = 0;
-    for (const v of preferFresh(vocab)) {
-      if (count >= MAX_PER_TYPE) break;
+    for (const v of preferFresh(list)) {
+      if (count >= cap) break;
       const distractors = shuffle(
         distinctMeanings.filter((m) => m !== v.vietnamese),
         rng,
@@ -106,14 +120,18 @@ export function buildQuestions(
         prompt: `'${v.korean}' có nghĩa là gì?`,
         options: shuffle([v.vietnamese, ...distractors], rng),
         answer: v.vietnamese,
+        ...(isReview ? { explanation: REVIEW_SUFFIX } : {}),
       });
       if (ok) count++;
     }
+  }
 
-    // ---------- MCQ Việt → Hàn ----------
-    count = 0;
-    for (const v of preferFresh(vocab)) {
-      if (count >= MAX_PER_TYPE) break;
+  /** MCQ Việt → Hàn. */
+  function genMcqVnKr(list: QuestionGenVocab[], cap: number, isReview: boolean) {
+    if (!canMcq) return;
+    let count = 0;
+    for (const v of preferFresh(list)) {
+      if (count >= cap) break;
       const distractors = shuffle(
         distinctKorean.filter((k) => k !== v.korean),
         rng,
@@ -124,51 +142,87 @@ export function buildQuestions(
         prompt: `'${v.vietnamese}' trong tiếng Hàn là gì?`,
         options: shuffle([v.korean, ...distractors], rng),
         answer: v.korean,
+        ...(isReview ? { explanation: REVIEW_SUFFIX } : {}),
       });
       if (ok) count++;
     }
   }
 
-  // ---------- FILL_BLANK từ câu ví dụ từ vựng ----------
-  let fbCount = 0;
-  for (const v of preferFresh(vocab)) {
-    if (fbCount >= MAX_PER_TYPE) break;
-    const ex = (v.exampleKr ?? "").trim();
-    if (!ex || !ex.includes(v.korean)) continue;
-    const holed = ex.replace(v.korean, "___");
-    const hint = v.exampleVi ? ` (gợi ý: ${v.exampleVi})` : "";
-    const ok = push({
-      type: "FILL_BLANK",
-      prompt: `${holed}${hint}`,
-      options: [],
-      answer: v.korean,
-    });
-    if (ok) fbCount++;
-  }
-
-  // ---------- FILL_BLANK ngữ pháp (điền trợ từ/đuôi) ----------
-  for (const g of grammar) {
-    const variants = parsePatternVariants(g.pattern);
-    if (variants.length === 0) continue;
-    let gCount = 0;
-    for (const ex of g.examples) {
-      if (gCount >= MAX_PER_GRAMMAR) break;
-      const kr = (ex.kr ?? "").trim();
-      const vi = (ex.vi ?? "").trim();
-      if (!kr) continue;
-      // Khớp biến thể dài nhất trước; không khớp → bỏ qua (không sinh câu sai)
-      const variant = variants.find((vt) => kr.includes(vt));
-      if (!variant) continue;
-      const holed = kr.replace(variant, "(__)");
+  /** FILL_BLANK từ câu ví dụ từ vựng. */
+  function genVocabFillBlank(list: QuestionGenVocab[], cap: number, isReview: boolean) {
+    let count = 0;
+    for (const v of preferFresh(list)) {
+      if (count >= cap) break;
+      const ex = (v.exampleKr ?? "").trim();
+      if (!ex || !ex.includes(v.korean)) continue;
+      const holed = ex.replace(v.korean, "___");
+      const hint = v.exampleVi ? ` (gợi ý: ${v.exampleVi})` : "";
       const ok = push({
         type: "FILL_BLANK",
-        prompt: vi ? `${holed} (nghĩa: ${vi})` : holed,
+        prompt: `${holed}${hint}`,
         options: [],
-        answer: variant,
-        explanation: `Cấu trúc: ${g.pattern}`,
+        answer: v.korean,
+        ...(isReview ? { explanation: REVIEW_SUFFIX } : {}),
       });
-      if (ok) gCount++;
+      if (ok) count++;
     }
+  }
+
+  /**
+   * FILL_BLANK ngữ pháp. `perGrammarCap` giới hạn theo từng điểm ngữ pháp;
+   * `totalCap` (nếu có) giới hạn tổng — dùng cho câu ôn tập.
+   */
+  function genGrammarFillBlank(
+    list: QuestionGenGrammar[],
+    perGrammarCap: number,
+    totalCap: number | null,
+    isReview: boolean,
+  ) {
+    let total = 0;
+    for (const g of list) {
+      if (totalCap !== null && total >= totalCap) break;
+      const variants = parsePatternVariants(g.pattern);
+      if (variants.length === 0) continue;
+      let gCount = 0;
+      for (const ex of g.examples) {
+        if (gCount >= perGrammarCap) break;
+        if (totalCap !== null && total >= totalCap) break;
+        const kr = (ex.kr ?? "").trim();
+        const vi = (ex.vi ?? "").trim();
+        if (!kr) continue;
+        // Khớp biến thể dài nhất trước; không khớp → bỏ qua (không sinh câu sai)
+        const variant = variants.find((vt) => kr.includes(vt));
+        if (!variant) continue;
+        const holed = kr.replace(variant, "(__)");
+        const ok = push({
+          type: "FILL_BLANK",
+          prompt: vi ? `${holed} (nghĩa: ${vi})` : holed,
+          options: [],
+          answer: variant,
+          explanation: `Cấu trúc: ${g.pattern}${isReview ? ` ${REVIEW_SUFFIX}` : ""}`,
+        });
+        if (ok) {
+          gCount++;
+          total++;
+        }
+      }
+    }
+  }
+
+  // ---------- Bài hiện tại (trọng tâm, cap như cũ) ----------
+  genMcqKrVn(vocab, MAX_PER_TYPE, false);
+  genMcqVnKr(vocab, MAX_PER_TYPE, false);
+  genVocabFillBlank(vocab, MAX_PER_TYPE, false);
+  genGrammarFillBlank(grammar, MAX_PER_GRAMMAR, null, false);
+
+  // ---------- Ôn tập bài trước (tối đa 2/dạng) ----------
+  if (reviewVocab.length > 0) {
+    genMcqKrVn(reviewVocab, MAX_REVIEW_PER_TYPE, true);
+    genMcqVnKr(reviewVocab, MAX_REVIEW_PER_TYPE, true);
+    genVocabFillBlank(reviewVocab, MAX_REVIEW_PER_TYPE, true);
+  }
+  if (reviewGrammar.length > 0) {
+    genGrammarFillBlank(reviewGrammar, MAX_PER_GRAMMAR, MAX_REVIEW_PER_TYPE, true);
   }
 
   return out;
