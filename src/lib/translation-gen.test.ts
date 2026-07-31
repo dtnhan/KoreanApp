@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   buildTranslationItems,
+  attachMultipleChoiceOptions,
   MAX_TRANSLATION_ITEMS,
   type TranslationVocab,
   type TranslationGrammar,
+  type TranslationItem,
 } from "./translation-gen";
 
 function seededRng(seed = 42): () => number {
@@ -99,5 +101,81 @@ describe("buildTranslationItems", () => {
     const items = buildTranslationItems({ vocab, grammar }, seededRng());
     const ids = items.map((i) => i.id).sort();
     expect(ids).toEqual(["example-0", "grammar-0-0", "word-0"]);
+  });
+});
+
+describe("attachMultipleChoiceOptions", () => {
+  function bigVocab(n: number): TranslationVocab[] {
+    return Array.from({ length: n }, (_, i) => ({
+      korean: `한국어${i}`,
+      vietnamese: `nghĩa số ${i}`,
+    }));
+  }
+
+  it("item đủ nhiễu có options chứa answer, không trùng lặp", () => {
+    const items = buildTranslationItems({ vocab: bigVocab(10), grammar: [] }, seededRng());
+    const withOptions = attachMultipleChoiceOptions(items, seededRng());
+    const withOpts = withOptions.filter((i) => i.options);
+    expect(withOpts.length).toBeGreaterThan(0);
+    for (const item of withOpts) {
+      expect(item.options!.length).toBeGreaterThanOrEqual(3);
+      expect(item.options!.length).toBeLessThanOrEqual(4);
+      expect(new Set(item.options)).toEqual(new Set(item.options)); // sanity
+      expect(new Set(item.options!).size).toBe(item.options!.length); // không trùng
+      expect(item.options).toContain(item.answer);
+    }
+  });
+
+  it("pool quá nhỏ (chỉ 1 item) → không có options (rơi về gõ)", () => {
+    const items: TranslationItem[] = [
+      { id: "word-0", direction: "VI_KR", prompt: "nghĩa", answer: "단어", source: "vocab" },
+    ];
+    const result = attachMultipleChoiceOptions(items, seededRng());
+    expect(result[0].options).toBeUndefined();
+  });
+
+  it("không trộn ngôn ngữ: VI_KR → mọi option là tiếng Hàn, KR_VI → tiếng Việt", () => {
+    const items = buildTranslationItems({ vocab: bigVocab(12), grammar: [] }, seededRng(3));
+    const withOptions = attachMultipleChoiceOptions(items, seededRng(3));
+    for (const item of withOptions) {
+      if (!item.options) continue;
+      if (item.direction === "VI_KR") {
+        // đáp án + nhiễu đều phải là các giá trị "korean" đã sinh (bắt đầu bằng "한국어"
+        // hoặc là near-miss biến thể Hangul của chúng) — kiểm tra không lẫn "nghĩa số"
+        for (const opt of item.options) {
+          expect(opt.includes("nghĩa số")).toBe(false);
+        }
+      } else {
+        for (const opt of item.options) {
+          expect(opt.startsWith("한국어")).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("khi near-miss không khả dụng, vẫn có thể ra 3 lựa chọn nhờ 2 nhiễu khác nghĩa", () => {
+    // Chọn answer không có trợ từ/âm tiết Hangul phù hợp để particleTypo/hangulSpellingTypo
+    // vẫn hoạt động thực ra luôn thành công với Hangul — dùng trường hợp KR_VI với câu
+    // tiếng Việt không dấu để buộc vietnameseToneTypo trả null.
+    const items: TranslationItem[] = [
+      { id: "a", direction: "KR_VI", prompt: "가", answer: "toi", source: "vocab" },
+      { id: "b", direction: "KR_VI", prompt: "나", answer: "ban", source: "vocab" },
+      { id: "c", direction: "KR_VI", prompt: "다", answer: "may", source: "vocab" },
+    ];
+    const result = attachMultipleChoiceOptions(items, seededRng());
+    const first = result.find((i) => i.id === "a")!;
+    expect(first.options).toBeDefined();
+    expect(first.options!.length).toBe(3); // answer + 2 easy, không có hard
+    expect(first.options).toContain("toi");
+  });
+
+  it("không thay đổi item không đủ nhiễu (giữ nguyên, không có options)", () => {
+    const items: TranslationItem[] = [
+      { id: "x", direction: "VI_KR", prompt: "p", answer: "a", source: "vocab" },
+      { id: "y", direction: "KR_VI", prompt: "q", answer: "b", source: "vocab" },
+    ];
+    const result = attachMultipleChoiceOptions(items, seededRng());
+    expect(result[0].options).toBeUndefined();
+    expect(result[1].options).toBeUndefined();
   });
 });

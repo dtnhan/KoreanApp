@@ -33,6 +33,14 @@ export const subjectParticle = (n: string) => (hasBatchim(n) ? "이" : "가");
 export const objectParticle = (n: string) => (hasBatchim(n) ? "을" : "를");
 export const copula = (n: string) => (hasBatchim(n) ? "이에요" : "예요");
 
+/** Các cặp trợ từ theo batchim (dùng chung cho dialogue-gen + near-miss). */
+export const PARTICLE_PAIRS: readonly (readonly [string, string])[] = [
+  ["은", "는"],
+  ["이", "가"],
+  ["을", "를"],
+  ["이에요", "예요"],
+];
+
 // ---------- Lọc danh từ ----------
 
 const ALL_HANGUL = /^[가-힣]+$/;

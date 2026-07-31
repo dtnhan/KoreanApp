@@ -84,6 +84,8 @@ export const labels = {
     restart: "Làm lại",
     result: (x: number, y: number) => `Đúng ${x}/${y} câu`,
     empty: "Bài học chưa đủ nội dung để luyện dịch.",
+    modeType: "Gõ đáp án",
+    modeChoice: "Trắc nghiệm",
   },
 
   auth: {

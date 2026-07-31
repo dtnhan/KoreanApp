@@ -1,7 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { buildTranslationItems, type TranslationItem } from "@/lib/translation-gen";
+import {
+  buildTranslationItems,
+  attachMultipleChoiceOptions,
+  type TranslationItem,
+} from "@/lib/translation-gen";
 import { normalizeAnswer } from "@/lib/normalize-answer";
 import { labels } from "@/lib/labels";
 import { AudioButton } from "@/components/AudioButton";
@@ -10,6 +14,7 @@ import type { VocabRow, GrammarRow } from "@/components/LessonTabs";
 const T = labels.translate;
 
 type Phase = "idle" | "playing" | "done";
+type Mode = "type" | "choice";
 
 export function TranslationPractice({
   vocab,
@@ -19,9 +24,11 @@ export function TranslationPractice({
   grammar: GrammarRow[];
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
+  const [mode, setMode] = useState<Mode>("type");
   const [items, setItems] = useState<TranslationItem[]>([]);
   const [idx, setIdx] = useState(0);
   const [input, setInput] = useState("");
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [checked, setChecked] = useState<"correct" | "incorrect" | null>(null);
   const [score, setScore] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,12 +38,16 @@ export function TranslationPractice({
 
   function start() {
     // Sinh danh sách lúc bấm Bắt đầu (không sinh lúc render → tránh hydration mismatch)
-    const built = buildTranslationItems({ vocab, grammar });
+    let built = buildTranslationItems({ vocab, grammar });
     if (built.length === 0) return;
+    if (mode === "choice") {
+      built = attachMultipleChoiceOptions(built);
+    }
     setItems(built);
     setIdx(0);
     setScore(0);
     setInput("");
+    setSelectedOption(null);
     setChecked(null);
     setPhase("playing");
   }
@@ -49,6 +60,15 @@ export function TranslationPractice({
     if (ok) setScore((s) => s + 1);
   }
 
+  function chooseOption(option: string) {
+    if (checked !== null) return;
+    const item = items[idx];
+    setSelectedOption(option);
+    const ok = option === item.answer;
+    setChecked(ok ? "correct" : "incorrect");
+    if (ok) setScore((s) => s + 1);
+  }
+
   function next() {
     const n = idx + 1;
     if (n >= items.length) {
@@ -57,6 +77,7 @@ export function TranslationPractice({
     }
     setIdx(n);
     setInput("");
+    setSelectedOption(null);
     setChecked(null);
     setTimeout(() => inputRef.current?.focus(), 0);
   }
@@ -69,6 +90,7 @@ export function TranslationPractice({
   }
 
   const current = items[idx];
+  const showChoiceUi = mode === "choice" && !!current?.options;
 
   return (
     <section>
@@ -81,13 +103,41 @@ export function TranslationPractice({
       ) : phase === "idle" ? (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 text-center">
           <p className="text-sm text-slate-600">{T.intro}</p>
-          <button
-            type="button"
-            onClick={start}
-            className="mt-4 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
-          >
-            ▶ {T.start}
-          </button>
+
+          <div className="mt-4 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+            <button
+              type="button"
+              onClick={() => setMode("type")}
+              className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${
+                mode === "type"
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-800"
+              }`}
+            >
+              ⌨️ {T.modeType}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("choice")}
+              className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${
+                mode === "choice"
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-800"
+              }`}
+            >
+              ☑️ {T.modeChoice}
+            </button>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={start}
+              className="mt-4 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+            >
+              ▶ {T.start}
+            </button>
+          </div>
         </div>
       ) : phase === "done" ? (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 text-center">
@@ -128,51 +178,81 @@ export function TranslationPractice({
             )}
           </div>
 
-          <div className="mt-5">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={checked !== null}
-              autoFocus
-              placeholder={T.placeholder}
-              className={`font-korean w-full rounded-lg border px-3 py-2.5 text-slate-900 outline-none transition focus:ring-2 focus:ring-brand-500/30 ${
-                checked === "correct"
-                  ? "border-emerald-400 bg-emerald-50"
-                  : checked === "incorrect"
-                    ? "border-red-400 bg-red-50"
-                    : "border-slate-300 focus:border-brand-500"
-              }`}
-            />
-
-            {checked !== null && (
-              <p
-                className={`mt-2 text-sm font-medium ${
-                  checked === "correct" ? "text-emerald-700" : "text-red-700"
+          {showChoiceUi ? (
+            <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {current.options!.map((opt) => {
+                const isAnswer = opt === current.answer;
+                const isChosen = opt === selectedOption;
+                let cls = "border-slate-200 bg-white text-slate-800 hover:border-brand-300";
+                if (checked !== null) {
+                  if (isAnswer) cls = "border-emerald-400 bg-emerald-50 text-emerald-800";
+                  else if (isChosen) cls = "border-red-400 bg-red-50 text-red-700";
+                  else cls = "border-slate-200 bg-white text-slate-400";
+                }
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={checked !== null}
+                    onClick={() => chooseOption(opt)}
+                    className={`font-korean rounded-xl border px-4 py-3 text-sm font-medium transition ${cls}`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={checked !== null}
+                autoFocus
+                placeholder={T.placeholder}
+                className={`font-korean w-full rounded-lg border px-3 py-2.5 text-slate-900 outline-none transition focus:ring-2 focus:ring-brand-500/30 ${
+                  checked === "correct"
+                    ? "border-emerald-400 bg-emerald-50"
+                    : checked === "incorrect"
+                      ? "border-red-400 bg-red-50"
+                      : "border-slate-300 focus:border-brand-500"
                 }`}
-              >
-                {checked === "correct" ? T.correct : T.incorrect}
-                {checked === "incorrect" && (
-                  <span className="ml-1 font-korean font-semibold">
-                    — {T.correctAnswerLabel}: {current.answer}
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
+              />
 
-          <div className="mt-4 text-right">
-            {checked === null ? (
-              <button
-                type="button"
-                onClick={check}
-                className="rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-              >
-                {T.check}
-              </button>
-            ) : (
+              {checked === null && (
+                <div className="mt-4 text-right">
+                  <button
+                    type="button"
+                    onClick={check}
+                    className="rounded-xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  >
+                    {T.check}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {checked !== null && (
+            <p
+              className={`mt-4 text-sm font-medium ${
+                checked === "correct" ? "text-emerald-700" : "text-red-700"
+              }`}
+            >
+              {checked === "correct" ? T.correct : T.incorrect}
+              {checked === "incorrect" && !showChoiceUi && (
+                <span className="ml-1 font-korean font-semibold">
+                  — {T.correctAnswerLabel}: {current.answer}
+                </span>
+              )}
+            </p>
+          )}
+
+          {checked !== null && (
+            <div className="mt-4 text-right">
               <button
                 type="button"
                 onClick={next}
@@ -180,8 +260,8 @@ export function TranslationPractice({
               >
                 {idx + 1 >= items.length ? "Xem kết quả" : T.next}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </section>

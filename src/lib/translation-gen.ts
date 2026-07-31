@@ -2,6 +2,7 @@
 // Thuần (pure), không lưu DB — rng inject được để test deterministic.
 
 import { shuffle } from "./listening";
+import { particleTypo, hangulSpellingTypo, vietnameseToneTypo } from "./near-miss";
 
 export type TranslationDirection = "VI_KR" | "KR_VI";
 
@@ -11,6 +12,8 @@ export type TranslationItem = {
   prompt: string;
   answer: string;
   source: "vocab" | "example" | "grammar";
+  /** Chỉ có khi đủ ≥2 nhiễu hợp lệ (attachMultipleChoiceOptions). */
+  options?: string[];
 };
 
 export type TranslationVocab = {
@@ -75,4 +78,59 @@ export function buildTranslationItems(
   });
 
   return shuffle(items, rng).slice(0, MAX_TRANSLATION_ITEMS);
+}
+
+const MAX_EASY_DISTRACTORS = 2;
+const MIN_DISTRACTORS_FOR_OPTIONS = 2;
+
+/**
+ * Gắn `options` (trắc nghiệm 3-4 lựa chọn) cho mỗi item khi đủ nhiễu hợp lệ:
+ * tối đa 1 nhiễu "khó" (near-miss chính tả/ngữ pháp của chính đáp án) + tối đa
+ * 2 nhiễu "dễ" (đáp án khác nghĩa, lấy từ item khác CÙNG chiều). Nếu tổng nhiễu
+ * hợp lệ < 2 → item không có `options` (UI rơi về ô gõ, an toàn).
+ */
+export function attachMultipleChoiceOptions(
+  items: TranslationItem[],
+  rng: Rng = Math.random,
+): TranslationItem[] {
+  const answersByDirection: Record<TranslationDirection, string[]> = {
+    VI_KR: [...new Set(items.filter((i) => i.direction === "VI_KR").map((i) => i.answer))],
+    KR_VI: [...new Set(items.filter((i) => i.direction === "KR_VI").map((i) => i.answer))],
+  };
+
+  return items.map((item) => {
+    const distractors: string[] = [];
+
+    // Nhiễu "khó" — near-miss chính tả/ngữ pháp của chính đáp án
+    const hard =
+      item.direction === "VI_KR"
+        ? (particleTypo(item.answer) ?? hangulSpellingTypo(item.answer, rng))
+        : vietnameseToneTypo(item.answer, rng);
+    if (hard && hard !== item.answer) {
+      distractors.push(hard);
+    }
+
+    // Nhiễu "dễ" — đáp án khác nghĩa, cùng chiều, tối đa 2
+    const pool = shuffle(
+      answersByDirection[item.direction].filter(
+        (a) => a !== item.answer && !distractors.includes(a),
+      ),
+      rng,
+    );
+    let easyCount = 0;
+    for (const a of pool) {
+      if (easyCount >= MAX_EASY_DISTRACTORS) break;
+      distractors.push(a);
+      easyCount++;
+    }
+
+    if (distractors.length < MIN_DISTRACTORS_FOR_OPTIONS) {
+      return item; // không đủ nhiễu hợp lệ → rơi về ô gõ (an toàn)
+    }
+
+    return {
+      ...item,
+      options: shuffle([item.answer, ...distractors], rng),
+    };
+  });
 }
