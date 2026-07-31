@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   buildTranslationItems,
   attachMultipleChoiceOptions,
-  MAX_TRANSLATION_ITEMS,
   type TranslationVocab,
   type TranslationGrammar,
   type TranslationItem,
@@ -80,10 +79,10 @@ describe("buildTranslationItems", () => {
     }
   });
 
-  it("cap tối đa 20 item khi có nhiều hơn", () => {
-    const vocab = makeVocab(15, true); // 15 word + 15 example = 30 tiềm năng
+  it("không giới hạn số câu — phủ hết toàn bộ từ vựng + ngữ pháp", () => {
+    const vocab = makeVocab(15, true); // 15 word + 15 example = 30
     const items = buildTranslationItems({ vocab, grammar: [] }, seededRng());
-    expect(items.length).toBe(MAX_TRANSLATION_ITEMS);
+    expect(items.length).toBe(30);
   });
 
   it("deterministic với cùng rng", () => {

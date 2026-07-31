@@ -34,8 +34,6 @@ export type TranslationGenInput = {
 
 type Rng = () => number;
 
-export const MAX_TRANSLATION_ITEMS = 20;
-
 function randomDirection(rng: Rng): TranslationDirection {
   return rng() < 0.5 ? "VI_KR" : "KR_VI";
 }
@@ -77,7 +75,8 @@ export function buildTranslationItems(
     });
   });
 
-  return shuffle(items, rng).slice(0, MAX_TRANSLATION_ITEMS);
+  // Phủ hết toàn bộ từ vựng + ngữ pháp của bài, không giới hạn số câu.
+  return shuffle(items, rng);
 }
 
 const MAX_EASY_DISTRACTORS = 2;
