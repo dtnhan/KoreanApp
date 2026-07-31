@@ -178,4 +178,39 @@ describe("attachMultipleChoiceOptions", () => {
     expect(result[0].options).toBeUndefined();
     expect(result[1].options).toBeUndefined();
   });
+
+  it("KR_VI (Hàn→Việt) không bao giờ có nhiễu near-miss dấu thanh: mọi option đều là answer thật của item khác trong tập, không phải biến thể tự tạo", () => {
+    const items: TranslationItem[] = [
+      { id: "a", direction: "KR_VI", prompt: "가", answer: "Xin chào", source: "vocab" },
+      { id: "b", direction: "KR_VI", prompt: "나", answer: "Cảm ơn", source: "vocab" },
+      { id: "c", direction: "KR_VI", prompt: "다", answer: "Tạm biệt", source: "vocab" },
+      { id: "e", direction: "KR_VI", prompt: "라", answer: "Xin lỗi", source: "vocab" },
+    ];
+    const answerSet = new Set(items.map((i) => i.answer));
+    const result = attachMultipleChoiceOptions(items, seededRng());
+    for (const item of result) {
+      if (!item.options) continue;
+      for (const opt of item.options) {
+        expect(answerSet.has(opt)).toBe(true); // không có "Xin chảo"/"Tám biệt" tự tạo
+      }
+      // Đủ pool → tận dụng bù 3 nhiễu dễ (không có nhiễu khó)
+      expect(item.options.length).toBe(4);
+    }
+  });
+
+  it("VI_KR (Việt→Hàn) vẫn có nhiễu khó khi đáp án chứa trợ từ", () => {
+    const items: TranslationItem[] = [
+      { id: "a", direction: "VI_KR", prompt: "Là quyển sách.", answer: "책이에요.", source: "example" },
+      { id: "b", direction: "VI_KR", prompt: "p2", answer: "학교", source: "vocab" },
+      { id: "c", direction: "VI_KR", prompt: "p3", answer: "친구", source: "vocab" },
+    ];
+    const result = attachMultipleChoiceOptions(items, seededRng());
+    const first = result.find((i) => i.id === "a")!;
+    expect(first.options).toBeDefined();
+    // Nhiễu khó (particleTypo trên "이에요") không trùng answer thật của item khác
+    const hasHardDistractor = first.options!.some(
+      (o) => o !== first.answer && o !== "학교" && o !== "친구",
+    );
+    expect(hasHardDistractor).toBe(true);
+  });
 });

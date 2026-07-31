@@ -2,7 +2,7 @@
 // Thuần (pure), không lưu DB — rng inject được để test deterministic.
 
 import { shuffle } from "./listening";
-import { particleTypo, hangulSpellingTypo, vietnameseToneTypo } from "./near-miss";
+import { particleTypo, hangulSpellingTypo } from "./near-miss";
 
 export type TranslationDirection = "VI_KR" | "KR_VI";
 
@@ -101,16 +101,21 @@ export function attachMultipleChoiceOptions(
   return items.map((item) => {
     const distractors: string[] = [];
 
-    // Nhiễu "khó" — near-miss chính tả/ngữ pháp của chính đáp án
+    // Nhiễu "khó" — chỉ áp dụng chiều Việt→Hàn (lỗi trợ từ/chính tả Hangul,
+    // đúng kiểu lỗi học viên hay mắc). Chiều Hàn→Việt KHÔNG dùng vietnameseToneTypo:
+    // đổi dấu thanh thường ra một từ có nghĩa khác hẳn (vd chào→chảo, tạm→tám),
+    // không giống "lỗi chính tả" mà chỉ là một từ nhiễu khác nghĩa thông thường.
     const hard =
       item.direction === "VI_KR"
         ? (particleTypo(item.answer) ?? hangulSpellingTypo(item.answer, rng))
-        : vietnameseToneTypo(item.answer, rng);
+        : null;
     if (hard && hard !== item.answer) {
       distractors.push(hard);
     }
 
-    // Nhiễu "dễ" — đáp án khác nghĩa, cùng chiều, tối đa 2
+    // Nhiễu "dễ" — đáp án khác nghĩa, cùng chiều. Bù thêm 1 nhiễu dễ khi
+    // không có nhiễu khó (KR_VI luôn, hoặc VI_KR khi particle/spelling typo thất bại).
+    const maxEasy = hard ? MAX_EASY_DISTRACTORS : MAX_EASY_DISTRACTORS + 1;
     const pool = shuffle(
       answersByDirection[item.direction].filter(
         (a) => a !== item.answer && !distractors.includes(a),
@@ -119,7 +124,7 @@ export function attachMultipleChoiceOptions(
     );
     let easyCount = 0;
     for (const a of pool) {
-      if (easyCount >= MAX_EASY_DISTRACTORS) break;
+      if (easyCount >= maxEasy) break;
       distractors.push(a);
       easyCount++;
     }
