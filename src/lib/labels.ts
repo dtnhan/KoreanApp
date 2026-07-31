@@ -55,6 +55,7 @@ export const labels = {
     hideKorean: "Ẩn tiếng Hàn",
     slowSpeed: "Tốc độ chậm",
     playAll: "Phát toàn bộ",
+    translate: "Luyện dịch",
   },
 
   listening: {
@@ -67,6 +68,22 @@ export const labels = {
     noDialogues: "Bài học này chưa có hội thoại.",
     question: (x: number, y: number) => `Câu ${x}/${y}`,
     result: (x: number, y: number) => `Đúng ${x}/${y} câu`,
+  },
+
+  translate: {
+    intro: "Gõ bản dịch của từ hoặc câu — kiểm tra khả năng nhớ chủ động.",
+    start: "Bắt đầu",
+    directionViKr: "Việt → Hàn",
+    directionKrVi: "Hàn → Việt",
+    placeholder: "Nhập câu trả lời...",
+    check: "Kiểm tra",
+    correct: "Chính xác!",
+    incorrect: "Chưa đúng",
+    correctAnswerLabel: "Đáp án đúng",
+    next: "Câu tiếp →",
+    restart: "Làm lại",
+    result: (x: number, y: number) => `Đúng ${x}/${y} câu`,
+    empty: "Bài học chưa đủ nội dung để luyện dịch.",
   },
 
   auth: {

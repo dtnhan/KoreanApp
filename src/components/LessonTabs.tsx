@@ -6,6 +6,7 @@ import { labels } from "@/lib/labels";
 import { AudioButton } from "@/components/AudioButton";
 import { DialoguePlayer } from "@/components/DialoguePlayer";
 import { ListeningQuiz } from "@/components/ListeningQuiz";
+import { TranslationPractice } from "@/components/TranslationPractice";
 
 export type GrammarExample = { kr: string; vi: string };
 export type DialogueLine = { speaker: string; kr: string; vi: string; audioUrl?: string | null };
@@ -32,7 +33,7 @@ export type DialogueBlock = {
   lines: DialogueLine[];
 };
 
-type Tab = "vocab" | "grammar" | "dialogue" | "listening";
+type Tab = "vocab" | "grammar" | "dialogue" | "listening" | "translate";
 
 const L = labels.lesson;
 
@@ -56,6 +57,7 @@ export function LessonTabs({
     { key: "grammar", label: L.grammar },
     { key: "dialogue", label: L.dialogue },
     { key: "listening", label: L.listening },
+    { key: "translate", label: L.translate },
   ];
 
   return (
@@ -97,6 +99,7 @@ export function LessonTabs({
             <ListeningQuiz vocab={vocab} />
           </div>
         )}
+        {tab === "translate" && <TranslationPractice vocab={vocab} grammar={grammar} />}
       </div>
     </div>
   );
