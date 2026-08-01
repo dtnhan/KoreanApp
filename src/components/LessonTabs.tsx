@@ -8,7 +8,7 @@ import { DialoguePlayer } from "@/components/DialoguePlayer";
 import { ListeningQuiz } from "@/components/ListeningQuiz";
 import { TranslationPractice } from "@/components/TranslationPractice";
 
-export type GrammarExample = { kr: string; vi: string };
+export type GrammarExample = { kr: string; vi: string; audioUrl?: string | null };
 export type DialogueLine = { speaker: string; kr: string; vi: string; audioUrl?: string | null };
 
 export type VocabRow = {
@@ -208,7 +208,7 @@ function GrammarTab({ grammar }: { grammar: GrammarRow[] }) {
               <li key={i} className="rounded-lg bg-slate-50 px-4 py-2.5">
                 <div className="flex items-center gap-1.5">
                   <p className="font-korean text-slate-900">{ex.kr}</p>
-                  <AudioButton text={ex.kr} />
+                  <AudioButton text={ex.kr} audioUrl={ex.audioUrl} />
                 </div>
                 <p className="text-sm text-slate-500">{ex.vi}</p>
               </li>

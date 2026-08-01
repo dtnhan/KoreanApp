@@ -2,6 +2,7 @@
 //   - từ vựng (VocabularyItem.korean)
 //   - câu ví dụ (VocabularyItem.exampleKr)
 //   - từng dòng hội thoại (Dialogue.lines[].kr)
+//   - từng câu ví dụ ngữ pháp (GrammarPoint.examples[].kr)
 // và gán URL vào DB. Idempotent: chỉ sinh file còn thiếu; luôn cập nhật URL + manifest.
 // Tự dọn (prune) các file MP3 không còn được nội dung nào tham chiếu.
 //
@@ -56,6 +57,9 @@ async function main() {
   const dialogues = await prisma.dialogue.findMany({
     select: { id: true, lines: true },
   });
+  const grammar = await prisma.grammarPoint.findMany({
+    select: { id: true, examples: true },
+  });
 
   // ---- Thu thập mọi văn bản Hàn cần audio ----
   const texts = new Set();
@@ -70,6 +74,11 @@ async function main() {
   for (const d of dialogues) {
     for (const line of Array.isArray(d.lines) ? d.lines : []) {
       add(line?.kr);
+    }
+  }
+  for (const g of grammar) {
+    for (const ex of Array.isArray(g.examples) ? g.examples : []) {
+      add(ex?.kr);
     }
   }
 
@@ -113,6 +122,16 @@ async function main() {
     dialogueUpdated++;
   }
 
+  let grammarUpdated = 0;
+  for (const g of grammar) {
+    const examples = (Array.isArray(g.examples) ? g.examples : []).map((ex) => {
+      const kr = (ex?.kr ?? "").trim();
+      return { ...ex, audioUrl: kr ? manifest[kr] ?? null : null };
+    });
+    await prisma.grammarPoint.update({ where: { id: g.id }, data: { examples } });
+    grammarUpdated++;
+  }
+
   // ---- Prune: xóa file mp3 không còn được tham chiếu ----
   const referenced = new Set([...texts].map((t) => fileNameFor(t)));
   let pruned = 0;
@@ -125,7 +144,7 @@ async function main() {
 
   console.log(
     `Xong: ${texts.size} đoạn văn bản, sinh mới ${generated} file, xóa ${pruned} file thừa. ` +
-      `Cập nhật ${vocabUpdated} từ vựng, ${dialogueUpdated} hội thoại.`,
+      `Cập nhật ${vocabUpdated} từ vựng, ${dialogueUpdated} hội thoại, ${grammarUpdated} điểm ngữ pháp.`,
   );
   await prisma.$disconnect();
 }

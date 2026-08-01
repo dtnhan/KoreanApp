@@ -280,7 +280,18 @@ async function main() {
       await prisma.dialogue.update({ where: { id: d.id }, data: { lines } });
     }
 
-    console.log(`Đã gắn audio cho ${audioCount} từ vựng và ${dialogues.length} hội thoại.`);
+    const grammarPoints = await prisma.grammarPoint.findMany({ select: { id: true, examples: true } });
+    for (const g of grammarPoints) {
+      const examples = (Array.isArray(g.examples) ? g.examples : []).map((ex) => {
+        const e = ex as { kr?: string } & Record<string, unknown>;
+        return { ...e, audioUrl: urlFor(e.kr) };
+      });
+      await prisma.grammarPoint.update({ where: { id: g.id }, data: { examples } });
+    }
+
+    console.log(
+      `Đã gắn audio cho ${audioCount} từ vựng, ${dialogues.length} hội thoại, ${grammarPoints.length} điểm ngữ pháp.`,
+    );
   }
 
   const courseCount = await prisma.course.count();
